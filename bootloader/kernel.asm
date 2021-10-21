@@ -128,7 +128,6 @@ menu_console:
     print_string 0Eh, 08h, texto_menu_snake
     
 
-
     .espera_tecla:
         ; espera por um caracter
         mov ah, 00h
