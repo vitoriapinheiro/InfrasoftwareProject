@@ -3,71 +3,79 @@ jmp 0x0000:start
 
 data:
     ; dados de game status
-    game_status db 1
-    winner_status db 0              ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
-    tela_atual db 0                 ; Status da tela atual | 0-> menu, 1 -> jogo
+    game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
+    winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
+    tela_atual db 0                                         ; Status da tela atual | 0-> menu, 1 -> jogo
     
     ; dados da tela
-    tela_largura dw 140h            ; janela feita com al = 13h (320x200)
+    tela_largura dw 140h                                    ; janela feita com al = 13h (320x200)
     tela_altura dw 0c8h     
-    margem_erro dw 6                ; margem de erro para a bola não atravessar a tela
+    margem_erro dw 6                                        ; margem de erro para a bola não atravessar a tela
 
     ; dados do tempo
-    tempo_aux dw 0                  ; variável usado para checar se o tempo passou
+    tempo_aux dw 0                                          ; variável usado para checar se o tempo passou
     
 
     ; dados da interface
-    texto_jogador_um db '0'         ; texto da pontuação do jogador 1
-    texto_jogador_dois db '0'       ; texto da pontuação do jogador 2
+    texto_jogador_um db '0'                                 ; texto da pontuação do jogador 1
+    texto_jogador_dois db '0'                               ; texto da pontuação do jogador 2
 
-    texto_game_over db 'GAME OVER', 0
-    texto_vencedor_1 db 'PLAYER 1 VENCEU', 0
-    texto_vencedor_2 db 'PLAYER 2 VENCEU', 0
-    texto_restart db 'RESTART - pressione R', 0
-    texto_return_main_menu db 'MENU - pressione M', 0
+    texto_game_over db 'GAME OVER', 0                       ; texto game over
+    texto_vencedor_1 db 'PLAYER 1 VENCEU', 0                ; texto vencedor 1
+    texto_vencedor_2 db 'PLAYER 2 VENCEU', 0                ; texto vencedor 2
+    texto_restart db 'RESTART - pressione R', 0             ; texto restart
+    texto_return_main_menu db 'MENU - pressione M', 0       ; texto retornar para o main menu
     
-    texto_main_menu db 'MENU PRINCIPAL', 0
-    texto_jogar db 'JOGAR - pressione P', 0
-    texto_sair_jogo db 'Pressione E para sair de jogo', 0
-    texto_jogador_1 db 'JOGADOR 1', 0
-    texto_inst_jogador_1 db 'O/L move cima/baixo', 0
-    texto_jogador_2 db 'JOGADOR 2', 0
-    texto_inst_jogador_2 db 'W/S move cima/baixo', 0
+    texto_main_menu db 'MENU PRINCIPAL', 0                  ; texto main menu
+    texto_jogar db 'JOGAR - pressione P', 0                 ; texto jogar
+    texto_sair_jogo db 'Pressione E para sair de jogo', 0   ; texto sair do jogo
+    texto_jogador_1 db 'JOGADOR 1', 0                       ; texto jogador 1
+    texto_inst_jogador_1 db 'O/L move cima/baixo', 0        ; texto inst jogador 1
+    texto_jogador_2 db 'JOGADOR 2', 0                       ; texto jogador 2
+    texto_inst_jogador_2 db 'W/S move cima/baixo', 0        ; texto inst jogador 2
+
+    texto_menu_console db 'MEU ATARI', 0
+    texto_menu_pong db 'P - JOGAR PONG', 0
+    texto_menu_space db 'S - JOGAR SPACE INVADERS', 0
+    texto_menu_snake db 'T - JOGAR SNAKE', 0
 
     ; dados da bola
-    bola_size dw 5                  ; tamanho da bola
-
-    bola_origem_X dw 0A0h           ; posicao X original da bola (meio da tela)
-    bola_origem_Y dw 064h           ; posição Y original da bola (meio da tela)
-    bola_X dw 0A0h                  ; posição X da bola
-    bola_Y dw 064h                  ; posição Y da bola
-    bola_vel_X dw 06h               ; velocidade X da bola
-    bola_vel_Y dw 03h               ; velocidade Y da bola
+    bola_size dw 5                                          ; tamanho da bola
+    bola_cor db 15                                          ; cor da bola
+   
+    bola_origem_X dw 0A0h                                   ; posicao X original da bola (meio da tela)
+    bola_origem_Y dw 064h                                   ; posição Y original da bola (meio da tela)
+    bola_X dw 0A0h                                          ; posição X da bola
+    bola_Y dw 064h                                          ; posição Y da bola
+    bola_vel_X dw 06h                                       ; velocidade X da bola
+    bola_vel_Y dw 03h                                       ; velocidade Y da bola
 
 
     ; dados das barras
 
-    barra_esquerda_pontos db 0      ; pontuação do primeiro jogador (esquerda)
-    barra_esquerda_X dw 0Ah         ; posição X da barra esquerda
-    barra_esquerda_Y dw 0Ah         ; posição Y da barra esquerda
+    barra_esquerda_pontos db 0                              ; pontuação do primeiro jogador (esquerda)
+    barra_esquerda_X dw 0Ah                                 ; posição X da barra esquerda
+    barra_esquerda_Y dw 0Ah                                 ; posição Y da barra esquerda
+    barra_esquerda_cor db 15
 
-    barra_direita_pontos db 0       ; pontuação do segundo jogador (direita)
-    barra_direita_X dw 132h         ; posição X da barra direita
-    barra_direita_Y dw 0A0h         ; posição Y da barra direita
+    barra_direita_pontos db 0                               ; pontuação do segundo jogador (direita)
+    barra_direita_X dw 132h                                 ; posição X da barra direita
+    barra_direita_Y dw 0A0h                                 ; posição Y da barra direita
+    barra_direita_cor db 15
 
-    barra_largura dw 5              ; largura da barra
-    barra_altura dw 30              ; altura da barra
-    barra_vel dw 06h                ; velocidade vertical da barra
-
+    barra_largura dw 5                                      ; largura da barra
+    barra_altura dw 30                                      ; altura da barra
+    barra_vel dw 06h                                        ; velocidade vertical da barra
+ 
 
 
 ; printa um objeto passando os parrametros
-; (coordX, coordY, largura, altura)
-%macro print_obj 4          
+; (coordX, coordY, largura, altura, cor)
+%macro print_obj 5          
     .loop1:    
         .loop2:
             mov ah, 0Ch             ; escrevendo um pixel
-            mov al, 0Fh             ; escolhendo a cor (branca)
+            mov al, %5             ; escolhendo a cor (branca)
             mov bh, 00h             ; escolhendo a pagina
             int 10h
 
@@ -86,7 +94,8 @@ data:
 
 %endmacro
 
-; linha, coluna, string
+; printa uma string passando os parametros
+; (linha, coluna, * string)
 %macro print_string 3 
     mov ah, 02h                     ; escolher a posição do cursor
     mov bh, 00h                     ; escolher a pagina
@@ -99,6 +108,60 @@ data:
     call prints                     ; print o texto
 %endmacro
 
+jogar_pong:
+    mov al, 1
+    mov [game_status], al
+    xor al, al
+    mov [tela_atual], al
+
+    jmp check_time
+
+menu_console:
+    call limpar_tela
+
+    print_string 04h, 06h, texto_menu_console
+
+    print_string 0Ah, 08h, texto_menu_pong
+
+    print_string 0Ch, 08h, texto_menu_space
+
+    print_string 0Eh, 08h, texto_menu_snake
+    
+
+
+    .espera_tecla:
+        ; espera por um caracter
+        mov ah, 00h
+        int 16h          ; salva o caracter em al
+
+        cmp al, 'p'
+        je jogar_pong
+        cmp al, 'P'
+        je jogar_pong
+
+        
+
+        jmp .espera_tecla
+
+
+    jmp menu_console
+
+reset_cor:
+    mov al, 1
+    mov [bola_cor], al
+    ret
+
+mudar_cor:
+    mov al, [bola_cor]
+    inc al
+    mov [bola_cor], al
+
+    mov ah, 16
+    cmp [bola_cor], ah
+    jge reset_cor
+
+    ret
+
 print_UI:
     ; desenhar os pontos do jogador esquerdo
 
@@ -110,7 +173,7 @@ print_UI:
 
     mov ah, 0Eh                     ; escrever caracter
     mov al, [texto_jogador_um]      ; escolher caracter
-    mov bl, 15                      ; escolher cor (branco)
+    mov bl, [barra_esquerda_cor]    ; escolher cor (branco)
     int 10h
 
     ; desenhar os pontos do jogador direito
@@ -122,7 +185,7 @@ print_UI:
 
     mov ah, 0Eh                     ; escrever caracter
     mov al, [texto_jogador_dois]    ; escolher caracter
-    mov bl, 15                      ; escolher cor (branco)
+    mov bl, [barra_direita_cor]     ; escolher cor (branco)
     int 10h
 
     ret
@@ -154,7 +217,7 @@ print_barra_direita:
     mov dx, [barra_direita_Y]
 
     ; desenha a barra direita
-    print_obj [barra_direita_X], [barra_direita_Y], [barra_largura], [barra_altura]
+    print_obj [barra_direita_X], [barra_direita_Y], [barra_largura], [barra_altura], [barra_direita_cor]
 
     ret
 
@@ -165,7 +228,7 @@ print_barra_esquerda:
     mov dx, [barra_esquerda_Y]
 
     ; desenha a barra esquerda
-    print_obj [barra_esquerda_X], [barra_esquerda_Y], [barra_largura], [barra_altura]
+    print_obj [barra_esquerda_X], [barra_esquerda_Y], [barra_largura], [barra_altura], [barra_esquerda_cor]
 
     ret
 
@@ -175,7 +238,7 @@ print_bola:
     mov dx, [bola_Y]
 
     ; desenha a bola
-    print_obj [bola_X], [bola_Y], [bola_size], [bola_size]
+    print_obj [bola_X], [bola_Y], [bola_size], [bola_size], [bola_cor]
 
     ret
 
@@ -246,13 +309,13 @@ print_game_over_menu:
     ret
 
     restart_game:
-        mov al, 01h
-        mov [game_status], al
-        ret
+        mov al, 01h                                 
+        mov [game_status], al                       ; game_status = 1 | retorna o jogo
+        ret     
 
     sair_para_menu:
         mov al, 00h
-        mov [game_status], al
+        mov [game_status], al                       ; game_status = 0 | o jogo para
         mov [tela_atual], al 
 
     
@@ -274,7 +337,7 @@ print_main_menu:
     print_string 14h, 08h, texto_inst_jogador_2     ; print texto int jogador 2
 
 
-    espera_tecla:
+    .espera_tecla:
         ; espera por um caracter
         mov ah, 00h
         int 16h          ; salva o caracter em al
@@ -289,7 +352,7 @@ print_main_menu:
         cmp al, 'E'
         je end
 
-        jmp espera_tecla
+        jmp .espera_tecla
 
 
     jogar:
@@ -318,6 +381,8 @@ inv_vel_X:
     neg ax
     mov [bola_vel_X], ax
 
+    call mudar_cor
+
     ret
 
 
@@ -327,6 +392,8 @@ inv_vel_Y:
     neg ax
     mov [bola_vel_Y], ax
     
+    call mudar_cor
+
     ret
 
 inv_vel_Y_gol:
@@ -513,6 +580,10 @@ mover_bola:
 
     ; se chegar até aqui, houve colisão com a barra direita
     ; inverte a velocidade da bola na direção X
+
+    mov al, [bola_cor]                  ; muda a cor da barra direita
+    mov [barra_direita_cor], al
+
     mov ax, [bola_vel_X]
     neg ax
     mov [bola_vel_X], ax
@@ -546,6 +617,10 @@ mover_bola:
 
     ; se chegar até aqui, houve colisão com a barra esquerda
     ; inverte a velocidade da bola na direção X
+
+    mov al, [bola_cor]                  ; muda a cor da barra esquerda
+    mov [barra_esquerda_cor], al
+
     mov ax, [bola_vel_X]
     neg ax
     mov [bola_vel_X], ax    
@@ -693,15 +768,16 @@ start:
     xor ax, ax
     mov ds, ax
 
-
+    
     call limpar_tela                ; executa a configuração de video inicial
 
     
     check_time:                     ; gera a sensação de movimento
         xor al , al
 
-        cmp [tela_atual], al
-        je mostra_main_menu
+        cmp [tela_atual], al        ; se a tela atual for a de menu
+        je mostra_main_menu         ; mostra o menu
+
         cmp [game_status], al       ; se o jogo acabar
         je mostra_game_over         ; mostra a tela de game over
         
@@ -742,6 +818,9 @@ start:
 
     
         end:                        
+            ; Menu do console
+            call menu_console
+
             ; chama o modo texto
             mov ah, 00h             ; set video mode
             mov al, 00h             ; escolhe o modo texto
