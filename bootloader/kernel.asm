@@ -2,71 +2,77 @@ org 0x7e00
 jmp 0x0000:start
 
 data:
-    ; dados de game status
-    game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
-    winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
-    tela_atual db 0                                         ; Status da tela atual | 0-> menu, 1 -> jogo
+    ; dados da interface console
+        texto_menu_console db 'SUPER ATARI', 0                  ; texto console
+        texto_menu_pong db 'P - JOGAR PONG', 0                  ; texto jogar Pong console
+        texto_menu_space db 'S - JOGAR SPACE INVADERS', 0       ; texto jogar Space Invaders console
+        texto_menu_snake db 'T - JOGAR SNAKE', 0                ; texto jogar Snake console
+
+    ; dados do Snake
+
+    ; dados do Space Invaders
     
-    ; dados da tela
-    tela_largura dw 140h                                    ; janela feita com al = 13h (320x200)
-    tela_altura dw 0c8h     
-    margem_erro dw 6                                        ; margem de erro para a bola não atravessar a tela
+    ; dados do Pong
+        ; dados de game status
+        game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
+        winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
+        tela_atual db 0                                         ; Status da tela atual | 0-> menu, 1 -> jogo
+        
+        ; dados da tela
+        tela_largura dw 140h                                    ; janela feita com al = 13h (320x200)
+        tela_altura dw 0c8h     
+        margem_erro dw 6                                        ; margem de erro para a bola não atravessar a tela
 
-    ; dados do tempo
-    tempo_aux dw 0                                          ; variável usado para checar se o tempo passou
+        ; dados do tempo
+        tempo_aux dw 0                                          ; variável usado para checar se o tempo passou
+        
+
+        ; dados da interface 
+        texto_jogador_um db '0'                                 ; texto da pontuação do jogador 1
+        texto_jogador_dois db '0'                               ; texto da pontuação do jogador 2
+
+        texto_game_over db 'GAME OVER', 0                       ; texto game over
+        texto_vencedor_1 db 'PLAYER 1 VENCEU', 0                ; texto vencedor 1
+        texto_vencedor_2 db 'PLAYER 2 VENCEU', 0                ; texto vencedor 2
+        texto_restart db 'RESTART - pressione R', 0             ; texto restart
+        texto_return_main_menu db 'MENU - pressione M', 0       ; texto retornar para o main menu
+        
+        texto_main_menu db 'MENU PRINCIPAL', 0                  ; texto main menu
+        texto_jogar db 'JOGAR - pressione P', 0                 ; texto jogar
+        texto_sair_jogo db 'Pressione E para sair de jogo', 0   ; texto sair do jogo
+        texto_jogador_1 db 'JOGADOR 1', 0                       ; texto jogador 1
+        texto_inst_jogador_1 db 'O/L move cima/baixo', 0        ; texto inst jogador 1
+        texto_jogador_2 db 'JOGADOR 2', 0                       ; texto jogador 2
+        texto_inst_jogador_2 db 'W/S move cima/baixo', 0        ; texto inst jogador 2
+        
+        ; dados da bola
+        bola_size dw 5                                          ; tamanho da bola
+        bola_cor db 15                                          ; cor da bola
     
+        bola_origem_X dw 0A0h                                   ; posicao X original da bola (meio da tela)
+        bola_origem_Y dw 064h                                   ; posição Y original da bola (meio da tela)
+        bola_X dw 0A0h                                          ; posição X da bola
+        bola_Y dw 064h                                          ; posição Y da bola
+        bola_vel_X dw 06h                                       ; velocidade X da bola
+        bola_vel_Y dw 03h                                       ; velocidade Y da bola
 
-    ; dados da interface
-    texto_jogador_um db '0'                                 ; texto da pontuação do jogador 1
-    texto_jogador_dois db '0'                               ; texto da pontuação do jogador 2
 
-    texto_game_over db 'GAME OVER', 0                       ; texto game over
-    texto_vencedor_1 db 'PLAYER 1 VENCEU', 0                ; texto vencedor 1
-    texto_vencedor_2 db 'PLAYER 2 VENCEU', 0                ; texto vencedor 2
-    texto_restart db 'RESTART - pressione R', 0             ; texto restart
-    texto_return_main_menu db 'MENU - pressione M', 0       ; texto retornar para o main menu
+        ; dados das barras
+
+        barra_esquerda_pontos db 0                              ; pontuação do primeiro jogador (esquerda)
+        barra_esquerda_X dw 0Ah                                 ; posição X da barra esquerda
+        barra_esquerda_Y dw 0Ah                                 ; posição Y da barra esquerda
+        barra_esquerda_cor db 15
+
+        barra_direita_pontos db 0                               ; pontuação do segundo jogador (direita)
+        barra_direita_X dw 132h                                 ; posição X da barra direita
+        barra_direita_Y dw 0A0h                                 ; posição Y da barra direita
+        barra_direita_cor db 15
+
+        barra_largura dw 5                                      ; largura da barra
+        barra_altura dw 30                                      ; altura da barra
+        barra_vel dw 06h                                        ; velocidade vertical da barra
     
-    texto_main_menu db 'MENU PRINCIPAL', 0                  ; texto main menu
-    texto_jogar db 'JOGAR - pressione P', 0                 ; texto jogar
-    texto_sair_jogo db 'Pressione E para sair de jogo', 0   ; texto sair do jogo
-    texto_jogador_1 db 'JOGADOR 1', 0                       ; texto jogador 1
-    texto_inst_jogador_1 db 'O/L move cima/baixo', 0        ; texto inst jogador 1
-    texto_jogador_2 db 'JOGADOR 2', 0                       ; texto jogador 2
-    texto_inst_jogador_2 db 'W/S move cima/baixo', 0        ; texto inst jogador 2
-
-    texto_menu_console db 'MEU ATARI', 0
-    texto_menu_pong db 'P - JOGAR PONG', 0
-    texto_menu_space db 'S - JOGAR SPACE INVADERS', 0
-    texto_menu_snake db 'T - JOGAR SNAKE', 0
-
-    ; dados da bola
-    bola_size dw 5                                          ; tamanho da bola
-    bola_cor db 15                                          ; cor da bola
-   
-    bola_origem_X dw 0A0h                                   ; posicao X original da bola (meio da tela)
-    bola_origem_Y dw 064h                                   ; posição Y original da bola (meio da tela)
-    bola_X dw 0A0h                                          ; posição X da bola
-    bola_Y dw 064h                                          ; posição Y da bola
-    bola_vel_X dw 06h                                       ; velocidade X da bola
-    bola_vel_Y dw 03h                                       ; velocidade Y da bola
-
-
-    ; dados das barras
-
-    barra_esquerda_pontos db 0                              ; pontuação do primeiro jogador (esquerda)
-    barra_esquerda_X dw 0Ah                                 ; posição X da barra esquerda
-    barra_esquerda_Y dw 0Ah                                 ; posição Y da barra esquerda
-    barra_esquerda_cor db 15
-
-    barra_direita_pontos db 0                               ; pontuação do segundo jogador (direita)
-    barra_direita_X dw 132h                                 ; posição X da barra direita
-    barra_direita_Y dw 0A0h                                 ; posição Y da barra direita
-    barra_direita_cor db 15
-
-    barra_largura dw 5                                      ; largura da barra
-    barra_altura dw 30                                      ; altura da barra
-    barra_vel dw 06h                                        ; velocidade vertical da barra
- 
 
 
 ; printa um objeto passando os parrametros
@@ -114,7 +120,7 @@ jogar_pong:
     xor al, al
     mov [tela_atual], al
 
-    jmp check_time
+    jmp pong_loop
 
 menu_console:
     call limpar_tela
@@ -137,8 +143,6 @@ menu_console:
         je jogar_pong
         cmp al, 'P'
         je jogar_pong
-
-        
 
         jmp .espera_tecla
 
@@ -762,16 +766,8 @@ mover_barras:               ; move as barras verticalmente
 
     exit_mov_barra:
         ret
-        
-start:
-    xor ax, ax
-    mov ds, ax
 
-    
-    call limpar_tela                ; executa a configuração de video inicial
-
-    
-    check_time:                     ; gera a sensação de movimento
+pong_loop:                     ; gera a sensação de movimento
         xor al , al
 
         cmp [tela_atual], al        ; se a tela atual for a de menu
@@ -784,7 +780,7 @@ start:
         int 1ah                     ; cx:dx = numero de ticks de clock desde a meia noite
 
         cmp dx, [tempo_aux]         ; verifica se o tempo passou (provavelmente 1/100 s)
-        je check_time
+        je pong_loop
 
         ; o tempo passou
 
@@ -804,26 +800,30 @@ start:
 
         call print_UI
 
-        jmp check_time 
+        jmp pong_loop 
     
         mostra_game_over:
             call print_game_over_menu
-            jmp check_time
+            jmp pong_loop
             
         mostra_main_menu:
             call print_main_menu
-            jmp check_time
+            jmp pong_loop
             
-
-    
         end:                        
             ; Menu do console
             call menu_console
+        
+start:
+    xor ax, ax
+    mov ds, ax
 
-            ; chama o modo texto
-            mov ah, 00h             ; set video mode
-            mov al, 00h             ; escolhe o modo texto
-            int 10h                 ; executa
+    
+    call limpar_tela                ; executa a configuração de video inicial
+
+    jmp menu_console
+    
+    
 
 
 times 63*512-($-$$) db 0
