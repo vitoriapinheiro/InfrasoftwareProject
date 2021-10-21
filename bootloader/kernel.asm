@@ -66,9 +66,9 @@ data:
 %macro print_obj 4          
     .loop1:    
         .loop2:
-            mov ah, 0Ch     ; escrevendo um pixel
-            mov al, 0Fh     ; escolhendo a cor (branca)
-            mov bh, 00h     ; escolhendo a pagina
+            mov ah, 0Ch             ; escrevendo um pixel
+            mov al, 0Fh             ; escolhendo a cor (branca)
+            mov bh, 00h             ; escolhendo a pagina
             int 10h
 
             inc cx
@@ -84,6 +84,19 @@ data:
         cmp ax, %4
         jne .loop1
 
+%endmacro
+
+; linha, coluna, string
+%macro print_string 3 
+    mov ah, 02h                     ; escolher a posição do cursor
+    mov bh, 00h                     ; escolher a pagina
+    mov dh, %1                      ; escolher a linha
+    mov dl, %2                      ; escolher a coluna
+    int 10h
+
+    mov si, %3                      ; pega o texto 
+
+    call prints                     ; print o texto
 %endmacro
 
 print_UI:
@@ -166,6 +179,16 @@ print_bola:
 
     ret
 
+prints:                ; print o texto de game over
+        .loop:
+            lodsb ; bota character em al 
+            cmp al, 0
+            je .endloop
+            call putchar
+            jmp .loop
+        .endloop:
+            ret
+
 putchar:
     mov ah, 0x0e
     mov bh, 00h
@@ -176,94 +199,39 @@ putchar:
 print_game_over_menu:
     call limpar_tela
 
+    print_string 04h, 06h, texto_game_over          ; print texto game over
 
-    ; mostra o texto de gameover
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 04h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
+
+    ; mostra o vencedor     
+    mov ah, 02h                                     ; escolher a posição do cursor
+    mov bh, 00h                                     ; escolher a pagina
+    mov dh, 06h                                     ; escolher a linha
+    mov dl, 06h                                     ; escolher a coluna
     int 10h
 
-    mov si, texto_game_over         ; pega o texto de game over
-
-    print_game_over:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-        
-    ; mostra o vencedor
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 06h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
-
-    mov al, 01h                     ; compara o status de vencedor
+    mov al, 01h                                     ; compara o status de vencedor
     cmp [winner_status], al
-    je vencedor_um                  ; se for 1 o jogador 1 venceu
-    jne vencedor_dois               ; se não, o jogador 2 venceu
+    je vencedor_um                                  ; se for 1 o jogador 1 venceu
+    jne vencedor_dois                               ; se não, o jogador 2 venceu
 
     vencedor_um:
-        mov si, texto_vencedor_1    ; pega o texto de vencedor 1
+        mov si, texto_vencedor_1                    ; pega o texto de vencedor 1
         jmp print_vencedor
     vencedor_dois:
-        mov si, texto_vencedor_2    ; pega o texto de vencedor 2
+        mov si, texto_vencedor_2                    ; pega o texto de vencedor 2
         jmp print_vencedor
 
-    print_vencedor:                 ; print o texto de vencedor
-        .loop:
-            lodsb           ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
+    print_vencedor:                                 ; print o texto de vencedor
+        call prints
     
-    ;mostrar restart
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 08h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
+    print_string 08h, 06h, texto_restart            ; print texto restart
 
-    mov si, texto_restart
-
-    print_restart:                   ; print o texto de restart
-        .loop:
-            lodsb           ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-    
-    ;mostrar sair para o menu
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 0Ah                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
-
-    mov si, texto_return_main_menu
-
-    print_return_menu:              ; print o texto de retornar ao menu
-        .loop:
-            lodsb           ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-    
+    print_string 0Ah, 06h, texto_return_main_menu   ; print texto return main menu  
 
 
     ; espera por um caracter
     mov ah, 00h
-    int 16h                          ; salva o caracter em al
+    int 16h             ; salva o caracter em al
 
     cmp al, 'r'
     je restart_game
@@ -291,137 +259,25 @@ print_game_over_menu:
 print_main_menu:
     call limpar_tela
 
-    ; mostra o texto de main menu
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 04h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
+    print_string 04h, 06h, texto_main_menu          ; print texto main menu
 
-    mov si, texto_main_menu         ; pega o texto de game over
+    print_string 06h, 06h, texto_jogar              ; print texto jogar
 
-    print_texto_main:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
+    print_string 08h, 06h, texto_sair_jogo          ; print texto sair do jogo
 
-    ; mostra o texto de jogar
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 06h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
+    print_string 0Eh, 06h, texto_jogador_1          ; print texto jogador 1
 
-    mov si, texto_jogar         ; pega o texto de game over
+    print_string 10h, 08h, texto_inst_jogador_1     ; print texto inst jogador 1
+   
+    print_string 12h, 06h, texto_jogador_2          ; print texto jogador 2
 
-    print_texto_jogar:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
+    print_string 14h, 08h, texto_inst_jogador_2     ; print texto int jogador 2
 
-    ; mostra o texto de sair do jogo
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 08h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
-
-    mov si, texto_sair_jogo         ; pega o texto de game over
-
-    print_texto_sair_jogo:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-
-
-    ; mostra o texto jogador 1
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 0Eh                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
-
-    mov si, texto_jogador_1         ; pega o texto de game over
-
-    print_texto_jogador_1:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-
-    ; mostra o texto instrucao 1
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 10h                     ; escolher a linha
-    mov dl, 08h                     ; escolher a coluna
-    int 10h
-
-    mov si, texto_inst_jogador_1         ; pega o texto de game over
-
-    print_texto_inst_1:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-
-    ; mostra o texto jogador 2
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 12h                     ; escolher a linha
-    mov dl, 06h                     ; escolher a coluna
-    int 10h
-
-    mov si, texto_jogador_2        ; pega o texto de game over
-
-    print_texto_jogador_2:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
-    
-    ; mostra o texto instrucao 2
-    mov ah, 02h                     ; escolher a posição do cursor
-    mov bh, 00h                     ; escolher a pagina
-    mov dh, 14h                     ; escolher a linha
-    mov dl, 08h                     ; escolher a coluna
-    int 10h
-
-    mov si, texto_inst_jogador_2         ; pega o texto de game over
-
-    print_texto_inst_2:                ; print o texto de game over
-        .loop:
-            lodsb ; bota character em al 
-            cmp al, 0
-            je .endloop
-            call putchar
-            jmp .loop
-        .endloop:
 
     espera_tecla:
         ; espera por um caracter
         mov ah, 00h
-        int 16h                          ; salva o caracter em al
+        int 16h          ; salva o caracter em al
 
         cmp al, 'p'
         je jogar
@@ -534,13 +390,13 @@ reset_bola:
     ret
 
 pontuar_jogador_um:
-    mov al, [barra_esquerda_pontos]             ; pontua o jogador um 
+    mov al, [barra_esquerda_pontos]                 ; pontua o jogador um 
     inc al
     mov [barra_esquerda_pontos], al
 
-    call reset_bola                             ; bola volta para o início
+    call reset_bola                                 ; bola volta para o início
 
-    call atualiza_texto_jogador_um              ; Atualiza a pontuação na tela do jogador 1
+    call atualiza_texto_jogador_um                  ; Atualiza a pontuação na tela do jogador 1
 
     ; checa se o jogador dois fez 5 pontos
     mov al, [barra_esquerda_pontos]
@@ -550,13 +406,13 @@ pontuar_jogador_um:
     ret
 
 pontuar_jogador_dois:
-    mov al, [barra_direita_pontos]              ; pontua jogador dois
+    mov al, [barra_direita_pontos]                  ; pontua jogador dois
     inc al
     mov [barra_direita_pontos], al
    
-    call reset_bola                             ; bola volta para o início
+    call reset_bola                                 ; bola volta para o início
 
-    call atualiza_texto_jogador_dois            ; Atualiza a pontuação na tela do jogador 2
+    call atualiza_texto_jogador_dois                ; Atualiza a pontuação na tela do jogador 2
 
     ; checa se o jogador dois fez 5 pontos
     mov al, [barra_direita_pontos]
@@ -631,25 +487,25 @@ mover_bola:
 
     ; checa se a bola colide com a barra direita
     
-                                        ; bola_x + bola_size > barra_direita_X
+    ; bola_x + bola_size > barra_direita_X
     mov ax, [bola_X]
     add ax, [bola_size]
     cmp ax, [barra_direita_X]
     jng check_colisao_barra_esquerda    ; se não tem colidao com a barra direta, checamos a barra esquerda
 
-                                        ; bola_x < barra_direita_X + barra_largura 
+    ; bola_x < barra_direita_X + barra_largura 
     mov ax, [barra_direita_X]
     add ax, [barra_largura]
     cmp [bola_X], ax
     jnl check_colisao_barra_esquerda    ; se não tem colidao com a barra direta, checamos a barra esquerda
 
-                                        ; bola_Y + bola_size > barra_direita_Y
+    ; bola_Y + bola_size > barra_direita_Y
     mov ax, [bola_Y]
     add ax, [bola_size]
     cmp ax, [barra_direita_Y]
     jng check_colisao_barra_esquerda    ; se não tem colidao com a barra direta, checamos a barra esquerda
 
-                                        ; bola_Y < barra_direita_Y + barra_altura
+    ; bola_Y < barra_direita_Y + barra_altura
     mov ax, [barra_direita_Y]
     add ax, [barra_altura]
     cmp [bola_Y], ax
@@ -668,25 +524,25 @@ mover_bola:
     mov ax, [bola_X]
     add ax, [bola_size]
     cmp ax, [barra_esquerda_X]
-    jng exit_check_colisao_barra    ; se não tem colidao com a barra direta, checamos a barra esquerda
+    jng exit_check_colisao_barra        ; se não tem colidao com a barra direta, checamos a barra esquerda
 
-                                        ; bola_x < barra_esquerda_X + barra_largura 
+    ; bola_x < barra_esquerda_X + barra_largura 
     mov ax, [barra_esquerda_X]
     add ax, [barra_largura]
     cmp [bola_X], ax
-    jnl exit_check_colisao_barra    ; se não tem colidao com a barra direta, checamos a barra esquerda
+    jnl exit_check_colisao_barra        ; se não tem colidao com a barra direta, checamos a barra esquerda
 
-                                        ; bola_Y + bola_size > barra_esquerda_Y
+    ; bola_Y + bola_size > barra_esquerda_Y
     mov ax, [bola_Y]
     add ax, [bola_size]
     cmp ax, [barra_esquerda_Y]
-    jng exit_check_colisao_barra    ; se não tem colidao com a barra direta, checamos a barra esquerda
+    jng exit_check_colisao_barra        ; se não tem colidao com a barra direta, checamos a barra esquerda
 
-                                        ; bola_Y < barra_esquerda_Y + barra_altura
+    ; bola_Y < barra_esquerda_Y + barra_altura
     mov ax, [barra_esquerda_Y]
     add ax, [barra_altura]
     cmp [bola_Y], ax
-    jnl exit_check_colisao_barra    ; se não tem colidao com a barra direta, checamos a barra esquerda
+    jnl exit_check_colisao_barra        ; se não tem colidao com a barra direta, checamos a barra esquerda
 
     ; se chegar até aqui, houve colisão com a barra esquerda
     ; inverte a velocidade da bola na direção X
@@ -846,7 +702,7 @@ start:
 
         cmp [tela_atual], al
         je mostra_main_menu
-        cmp [game_status], al          ; se o jogo acabar
+        cmp [game_status], al       ; se o jogo acabar
         je mostra_game_over         ; mostra a tela de game over
         
         mov ah, 00h                 ; get system time
@@ -867,7 +723,6 @@ start:
 
         call mover_barras           ; move e checa os movimentos validos das barras
 
- 
         call print_barra_esquerda   ; desenha a barra direita
 
         call print_barra_direita    ; desenha a barra esquerda
