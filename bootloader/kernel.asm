@@ -75,13 +75,13 @@ data:
     
 
 
-; printa um objeto passando os parrametros
+; printa um objeto passando os parametros
 ; (coordX, coordY, largura, altura, cor)
 %macro print_obj 5          
     .loop1:    
         .loop2:
             mov ah, 0Ch             ; escrevendo um pixel
-            mov al, %5             ; escolhendo a cor (branca)
+            mov al, %5              ; escolhendo a cor (branca)
             mov bh, 00h             ; escolhendo a pagina
             int 10h
 
@@ -113,6 +113,13 @@ data:
 
     call prints                     ; print o texto
 %endmacro
+jogar_snake:
+    mov al, 1
+    mov [game_status], al
+    xor al, al
+    mov [tela_atual], al
+
+    ; jmp snake_loop
 
 jogar_pong:
     mov al, 1
@@ -818,16 +825,10 @@ start:
     xor ax, ax
     mov ds, ax
 
-    
     call limpar_tela                ; executa a configuração de video inicial
 
     jmp menu_console
-    
-    
-
 
 times 63*512-($-$$) db 0
-
-
 jmp $
 dw 0xaa55
