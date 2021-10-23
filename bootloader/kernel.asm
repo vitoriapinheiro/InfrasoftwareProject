@@ -10,9 +10,46 @@ data:
 
     ; dados do Snake
 
-    ; dados do Space Invaders
+    ; dados do Space Invaders =======================================================
+        ; Variáveis de Vídeo -------- 320 * 200 = 64000 = 0FA00h
+
+        space_sprites   equ 0FA00h
+        alien1          equ 0FA00h
+        alien2          equ 0FA04h ; 4 bytes
+        jogador         equ 0FA08h ; 4 bytes
+        barreiras_array equ 0FA0Ch ; 5 * 4 = 20 bytes
+        aliens_array    equ 0FA20h ; 4 bytes
+        jogador_x       equ 0FA24h
+        tiros_array     equ 0FA25h  ; 4 * 2(coordenadas) = 8 bytes. 2 Primeiros Byte = Tiro do jogador
+        alien_y         equ 0FA2Dh
+        alien_x         equ 0FA2Eh
+        aliens_num      equ 0FA2Fh  ; Aliens vivos
+        aliens_direcao  equ 0FA30h  ; Direção dos aliens
+        move_timer      equ 0FA31h  ; Numero de Loops para que os aliens se movam
+        muda_alien      equ 0FA33h  ; Muda o sprite do alien
+
+        ; Constantes ----------------
+        TIMER           equ 046Ch ; Nº de ticks desde a meia-noite
+        BARREIRA_X      equ 22
+        BARREIRA_Y      equ 85
+        JOGADOR_Y       equ 93
+        LARGURA_TELA    equ 320
+        ALTURA_TELA     equ 200
+        SPRITE_HEIGHT   equ 4
+        SPRITE_WIDTH    equ 8       ; Width in bits/data pixels
+        SPRITE_WIDTH_P  equ 16      ; Width in screen pixel
+        
+        ; Cores ---------------------
+        COR_ALIEN       equ 02h
+        COR_JOGADOR     equ 0Fh
+        COR_TELA        equ 08h
+        COR_BARREIRA    equ 06h
+        COR_TIRO_ALIEN  equ 21h
+        COR_TIRO_PLAYER equ 35h
+
+
     
-    ; dados do Pong
+    ; dados do Pong =================================================================
         ; dados de game status
         game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
         winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
@@ -143,6 +180,10 @@ menu_console:
         je jogar_pong
         cmp al, 'P'
         je jogar_pong
+        cmp al, 's'
+        je jogar_space
+        cmp al, 'S'
+        je jogar_space
 
         jmp .espera_tecla
 
@@ -813,6 +854,126 @@ pong_loop:                     ; gera a sensação de movimento
         end:                        
             ; Menu do console
             call menu_console
+
+; Space Invaders ====================================================
+; Talvez dê bug com o sp e o bp
+
+jogar_space: ; Prepara a tela para o jogo ---------------------------
+    mov ax, 0013h ; Modo de vídeo
+    int 10h
+    push 0A000h 
+    pop es ; Movendo o ponteiro es para o primeiro pixel da tela
+
+    ; Movendo os sprites iniciais para a memória
+    mov di, space_sprites
+    mov si, space_sprites_bitmaps
+    mov cl, 6
+    rep movsw
+    
+    lodsd           ; Salva 5 barreiras na memoria 
+    mov cl, 5
+    rep stosd
+
+    ;; Variáveis Iniciais
+    mov cl, 5       ; Array de Aliens e X do Jogador
+    rep movsb
+
+    xor ax, ax      ; Array de Tiros
+    mov cl, 4
+    rep stosw
+
+    mov cl, 7       ; X e Y do Alien, numero de aliens, direção, movimento, mudança 
+    rep movsb
+
+    push es
+    pop ds          ; DS = ES
+
+jmp space_loop
+
+space_loop: ; Loop principal do jogo --------------------------------
+    xor ax, ax
+    mov al, COR_TELA
+    xor di, di
+    mov cx, LARGURA_TELA*ALTURA_TELA ; Tamanho da tela
+    rep stosb  ; Pinta a tela com a cor em al
+
+    ; Desenhar Aliens ------------------------------
+    mov si, aliens_array
+    mov bl, COR_ALIEN
+    mov ax, [si + 13]       ; AL = alien_y, AH = alien_x
+    cmp byte [si + 19], 0   ; Booleano para mudar o sprite do alien
+    jg desenha_linha_aliens  ; Se não, use o sprite normal
+    add di, 4               ; Se sim, use o sprite alternativo 
+    desenha_linha_aliens:
+        pusha
+
+
+
+        popa
+    ; Desenhar Barreiras ---------------------------
+
+    ; Desenhar Jogador -----------------------------
+
+    ; Checar se o tiro acertou algo ----------------
+        ; Acertou Jogador
+        ; Acertou Barreira 
+        ; Acertou Alien
+    ; Desenhar Tiros ------------------------------
+
+    ; Criar Tiros dos Aliens ----------------------
+
+    ; Mover Aliens --------------------------------
+
+    ; Pegar Input do Jogador ----------------------
+
+    temporizador_delay:
+        mov ax, [TIMER]
+        inc ax; Incremento em um segundo
+        .wait:
+            cmp [TIMER], ax ; Checo se já se passou um segundo
+            jl .wait
+jmp space_loop
+
+space_game_over: ; Fim de Jogo e Reset
+    cli
+    hlt
+
+
+space_desenha_sprite: ; Desenha um sprite na tela
+    ret
+
+space_posicao_na_tela:
+
+
+space_sprites_bitmaps:
+    db 10011001b    ; Alien 1 bitmap
+    db 01011010b
+    db 00111100b
+    db 01000010b
+
+    db 00011000b    ; Alien 2 bitmap
+    db 01011010b
+    db 10111101b
+    db 00100100b
+
+    db 00011000b    ; Jogador bitmap
+    db 00111100b
+    db 00100100b
+    db 01100110b
+
+    db 00111100b    ; Barreira bitmap
+    db 01111110b
+    db 11100111b
+    db 11100111b
+
+    dw 0FFFFh       ; Alien array
+    dw 0FFFFh
+    db 70           ; player_x
+    dw 230Ah        ; alien_y e alien x | 10 = Y, 35 = X
+    db 20h          ; num de aliens = 32 
+    db 0FBh         ; Direção =  -5
+    dw 18           ; 18 Ticks para mover os aliens
+    db 1            ; Muda o alien - entre 1 e -1
         
 start:
     xor ax, ax
@@ -822,8 +983,8 @@ start:
     call limpar_tela                ; executa a configuração de video inicial
 
     jmp menu_console
-    
-    
+
+
 
 
 times 63*512-($-$$) db 0
