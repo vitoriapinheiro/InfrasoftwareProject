@@ -900,8 +900,9 @@ space_loop: ; Loop principal do jogo --------------------------------
     ; Desenhar Aliens ------------------------------
     mov si, aliens_array
     mov bl, COR_ALIEN
-    mov ax, [si + 13]       ; AL = alien_y, AH = alien_x
-    cmp byte [si + 19], 0   ; Booleano para mudar o sprite do alien
+    mov al, [alien_y]       ; AL = alien_y, AH = alien_x
+    mov ah, [alien_x]
+    cmp byte [muda_alien], 0   ; Booleano para mudar o sprite do alien
     jg desenha_linha_aliens  ; Se não, use o sprite normal
     add di, 4               ; Se sim, use o sprite alternativo 
     desenha_linha_aliens:
