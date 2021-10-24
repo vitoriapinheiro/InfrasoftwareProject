@@ -13,40 +13,58 @@ data:
     ; dados do Space Invaders =======================================================
         ; Variáveis de Vídeo -------- 320 * 200 = 64000 = 0FA00h
 
-        space_sprites   equ 0FA00h
-        alien1          equ 0FA00h
-        alien2          equ 0FA04h ; 4 bytes
-        jogador         equ 0FA08h ; 4 bytes
-        barreiras_array equ 0FA0Ch ; 5 * 4 = 20 bytes
-        aliens_array    equ 0FA20h ; 4 bytes
-        jogador_x       equ 0FA24h
-        tiros_array     equ 0FA25h  ; 4 * 2(coordenadas) = 8 bytes. 2 Primeiros Byte = Tiro do jogador
-        alien_y         equ 0FA2Dh
-        alien_x         equ 0FA2Eh
-        aliens_num      equ 0FA2Fh  ; Aliens vivos
-        aliens_direcao  equ 0FA30h  ; Direção dos aliens
-        move_timer      equ 0FA31h  ; Numero de Loops para que os aliens se movam
-        muda_alien      equ 0FA33h  ; Muda o sprite do alien
-
+        space_sprites    equ 0FA00h
+        alien1           equ 0FA00h
+        alien2           equ 0FA04h  ; 4 bytes
+        jogador          equ 0FA08h  ; 4 bytes
+        barreiras_array  equ 0FA0Ch  ; 5 * 4 = 20 bytes
+        aliens_array     equ 0FA20h  ; 4 bytes
+        jogador_x        equ 0FA24h
+        tiros_array      equ 0FA25h  ; 4 * 2(coordenadas) = 8 bytes. 2 Primeiros Byte = Tiro do jogador
+        alien_y          equ 0FA2Dh
+        alien_x          equ 0FA2Eh
+        aliens_num       equ 0FA2Fh  ; Aliens vivos
+        aliens_direcao   equ 0FA30h  ; Direção dos aliens
+        move_timer       equ 0FA31h  ; Numero de Loops para que os aliens se movam
+        muda_alien       equ 0FA33h  ; Muda o sprite do alien
+        
+        ; Outras variáveis ----------
+        dist_barreiras   equ 0FA34h 
+        num_barreiras    equ 0FA35h 
+        
         ; Constantes ----------------
-        TIMER           equ 046Ch ; Nº de ticks desde a meia-noite
-        BARREIRA_X      equ 22
-        BARREIRA_Y      equ 85
-        JOGADOR_Y       equ 93
-        LARGURA_TELA    equ 320
-        ALTURA_TELA     equ 200
-        SPRITE_HEIGHT   equ 4
-        SPRITE_WIDTH    equ 8       ; Width in bits/data pixels
-        SPRITE_WIDTH_P  equ 16      ; Width in screen pixel
+        TIMER            equ 046Ch ; Nº de ticks desde a meia-noite
+        BARREIRA_X       equ 25
+        BARREIRA_Y       equ 85
+        JOGADOR_Y        equ 93
+        LARGURA_TELA     equ 320
+        ALTURA_TELA      equ 200
+        ALTURA_SPRITE    equ 4
+        LARGURA_SPRITE   equ 8       ; Largura em Bits
+        LARGURA_SPRITE_P equ 16      ; Largura em Pixels
+        DIST_BARREIRAS   equ 25
         
         ; Cores ---------------------
         COR_ALIEN       equ 02h
         COR_JOGADOR     equ 0Fh
-        COR_TELA        equ 08h
+        COR_TELA        equ 13h
         COR_BARREIRA    equ 06h
         COR_TIRO_ALIEN  equ 21h
         COR_TIRO_PLAYER equ 35h
-
+        
+        ; Textos -------------------
+        space_texto_main_menu        db 'BEM-VINDO AO SPACE INVADERS' ,0
+        space_instrucoes1            db 'DERROTE OS ALIENS', 0
+        space_instrucoes2            db 'ANTES QUE ELES CHEGUEM ATE VOCE',0
+        space_texto_jogar            db 'JOGAR - PRESSIONE S',0
+        space_texto_sair_jogo        db 'SAIR - PRESSIONE N', 0
+        space_texto_controle         db 'USE A/D PARA SE MOVER', 0
+        space_texto_tiro             db 'ATIRE COM W', 0
+        space_texto_reset            db 'RESET COM R', 0
+        space_fases                  db 'BOA SORTE NAS 3 FASES!', 0
+        space_fase1                  db 'FASE 1', 0
+        space_fase2                  db 'FASE 2', 0 
+        space_fase3                  db 'FASE 3', 0
 
     
     ; dados do Pong =================================================================
@@ -859,10 +877,16 @@ pong_loop:                     ; gera a sensação de movimento
 ; Talvez dê bug com o sp e o bp
 
 jogar_space: ; Prepara a tela para o jogo ---------------------------
+    xor ax, ax
+    xor bx, bx
+    xor cx, cx
     mov ax, 0013h ; Modo de vídeo
     int 10h
     push 0A000h 
     pop es ; Movendo o ponteiro es para o primeiro pixel da tela
+    call space_printa_menu
+    cmp al, 1
+    je start
 
     ; Movendo os sprites iniciais para a memória
     mov di, space_sprites
@@ -882,57 +906,203 @@ jogar_space: ; Prepara a tela para o jogo ---------------------------
     mov cl, 4
     rep stosw
 
-    mov cl, 7       ; X e Y do Alien, numero de aliens, direção, movimento, mudança 
+    mov cl, 9       ; X e Y do Alien, numero de aliens, direção, movimento, mudança, etc..
     rep movsb
 
     push es
     pop ds          ; DS = ES
 
+    
 jmp space_loop
+
+space_printa_menu:
+    pusha
+    xor ax, ax
+    mov al, COR_TELA
+    xor di, di
+    mov cx, LARGURA_TELA*ALTURA_TELA    
+    rep stosb                           
+
+    print_string 02h, 07h, space_texto_main_menu
+    print_string 07h, 0Ch, space_instrucoes1
+    print_string 09h, 05h, space_instrucoes2
+    print_string 0Bh, 09h, space_fases
+    print_string 0Fh, 05h, space_texto_jogar              
+    print_string 11h, 05h, space_texto_sair_jogo          
+    print_string 13h, 05h, space_texto_controle
+    print_string 15h, 05h, space_texto_tiro
+    print_string 17h, 05h, space_texto_reset
+
+    .espera_tecla:
+        mov ah, 00h
+        int 16h         
+        cmp al, 's'
+        je .jogar
+        cmp al, 'S'
+        je .jogar
+        cmp al, 'n'
+        je .end
+        cmp al, 'N'
+        je .end
+        jmp .espera_tecla
+    .jogar:
+        popa
+        xor ax, ax
+        mov al, COR_TELA
+        xor di, di
+        mov cx, LARGURA_TELA*ALTURA_TELA    
+        rep stosb
+        print_string 0Ah, 11h, space_fase1
+        .temporizador_delay:
+            mov ax, [CS:TIMER]
+            add ax,15
+            .wait:
+                cmp [CS:TIMER], ax ; Checo se já se passou um segundo
+                jl .wait
+        mov al,0
+        ret
+    .end:
+        popa
+        mov al,1
+        ret
 
 space_loop: ; Loop principal do jogo --------------------------------
     xor ax, ax
     mov al, COR_TELA
     xor di, di
-    mov cx, LARGURA_TELA*ALTURA_TELA ; Tamanho da tela
-    rep stosb  ; Pinta a tela com a cor em al
+    mov cx, LARGURA_TELA*ALTURA_TELA    ; Tamanho da tela
+    rep stosb                           ; Pinta a tela com a cor em al
 
     ; Desenhar Aliens ------------------------------
     mov si, aliens_array
     mov bl, COR_ALIEN
-    mov al, [alien_y]       ; AL = alien_y, AH = alien_x
+    mov al, [alien_y]           ; AL = alien_y, AH = alien_x
     mov ah, [alien_x]
-    cmp byte [muda_alien], 0   ; Booleano para mudar o sprite do alien
-    jg desenha_linha_aliens  ; Se não, use o sprite normal
-    add di, 4               ; Se sim, use o sprite alternativo 
+    mov cl, 4                   ; Numero de linhas
+    cmp byte [muda_alien], 0    ; Booleano para mudar o sprite do alien
+    jg desenha_linha_aliens     ; Se não, use o sprite normal
+    add di, 4                   ; Se sim, use o sprite alternativo
     desenha_linha_aliens:
-        pusha
+        pusha                   ; Salvando os registradores
+        mov cl, 8               ; 8 linhas
 
-
+        .checa_alien:
+            pusha
+            dec cx
+            bt [si],cx          ; Verifica se o bit está "ligado" (resultado no registrador de carry)
+            jnc .prox_alien     ; Se não (alien morreu), não desenhe
+            mov si,di           ; Sprite atual do alien em SI
+            call space_desenha_sprite
+            
+            .prox_alien:
+                popa                        ; Retorna os registradores para suas posições iniciais
+                add ah, LARGURA_SPRITE + 4  ; 4 Pixels de distância, ah guarda o x
+                .muda_cor:
+                inc bl
+                cmp bl, 8
+                je .muda_cor
+                
+        loop .checa_alien                   ; Loop roda "CL" vezes
 
         popa
-    ; Desenhar Barreiras ---------------------------
-
+        add al, ALTURA_SPRITE + 2
+        inc si
+    loop desenha_linha_aliens               ; Loop roda "CL" vezes (por isso o popa)
+    
     ; Desenhar Jogador -----------------------------
 
+    mov ah, [jogador_x]
+    mov al, JOGADOR_Y
+    mov si, jogador
+    mov bl, COR_JOGADOR
+    call space_desenha_sprite
+
+    ; Desenhar Barreiras ---------------------------
+
+    mov ah, BARREIRA_X
+    mov al, BARREIRA_Y
+    mov si, barreiras_array
+    mov bl, COR_BARREIRA
+    mov cl, [num_barreiras]
+    desenha_barreiras:
+        pusha
+        call space_desenha_sprite
+        popa
+        add ah, [dist_barreiras]
+        add si, ALTURA_SPRITE
+    loop desenha_barreiras
+    
     ; Checar se o tiro acertou algo ----------------
+    mov si,[tiros_array]
+    mov cl,4
+    get_prox_tiro:
+        push cx
+        lodsw       ; Y/X em AL e AH
+        cmp al, 0
+        jnz check_tiro
+        
+        prox_tiro:
+            pop cx
+    loop get_prox_tiro
+
+    jmp cria_tiro_aliens
+
+    check_tiro:
         ; Acertou Jogador
         ; Acertou Barreira 
         ; Acertou Alien
     ; Desenhar Tiros ------------------------------
 
     ; Criar Tiros dos Aliens ----------------------
+    cria_tiro_aliens:
 
     ; Mover Aliens --------------------------------
 
     ; Pegar Input do Jogador ----------------------
+    .get_input:
+        mov si, jogador_x
+        mov ah, 1h  
+        int 16h
+        jz .temporizador_delay
+        mov ah, 00h
+        int 16h
+        cmp al,'a'
+        je .move_left
+        cmp al,'A'
+        je .move_left
+        cmp al,'d'
+        je .move_right
+        cmp al,'D'
+        je .move_right
+        cmp al,'w'
+        je .shoot
+        cmp al,'W'
+        je .shoot
+        cmp al,'r'
+        je .reset
+        cmp al,'R'
+        je .reset
+        jne .temporizador_delay
+        .move_left:
+            sub byte[si], 2
+            jmp .temporizador_delay
+        .move_right:
+            add byte[si], 2
+            jmp .temporizador_delay
+        .shoot:
+            jmp .temporizador_delay
+        .reset:
+            xor ax,ax
+            mov ds, ax
+            jmp jogar_space
 
-    temporizador_delay:
-        mov ax, [TIMER]
+    .temporizador_delay:
+        mov ax, [CS:TIMER]
         inc ax; Incremento em um segundo
         .wait:
-            cmp [TIMER], ax ; Checo se já se passou um segundo
+            cmp [CS:TIMER], ax ; Checo se já se passou um segundo
             jl .wait
+
 jmp space_loop
 
 space_game_over: ; Fim de Jogo e Reset
@@ -940,10 +1110,47 @@ space_game_over: ; Fim de Jogo e Reset
     hlt
 
 
-space_desenha_sprite: ; Desenha um sprite na tela
+; Desenha um sprite na tela
+; Registradores:
+;   SI -> Endereço do sprite
+;   AL -> Posição Y
+;   AH -> Posição X
+;   BL -> Cor
+
+space_desenha_sprite:           ; Desenha um bloco de 4 pixels, por pixel
+    call space_posicao_na_tela  ; Recebe a posição em DI
+    mov cl, ALTURA_SPRITE       ; Loop para desenhar
+    .prox_linha:
+        push cx
+        lodsb                   ; AL = Prox Byte a ser desenhado (Já incrementa SI)
+        mov dx,ax               ; DX recebe AX
+        mov cl, LARGURA_SPRITE  ; Segundo loop para desenhar
+        .prox_pixel:
+            mov ax, [COR_TELA]          ; Se o bit for setado, printe a cor da tela
+            dec cx          
+            bt dx, cx                   ; Compara bitwise na posição cx
+            cmovc ax, bx                ; Se o bit for 1, pinte o pixel com a cor em BL
+            mov ah, al                  ; Copia a cor 
+            mov [di + LARGURA_TELA], ax ; Colore o pixel
+            stosw                       ; Move o ponteiro
+        jnz .prox_pixel                 ; Se ainda houverem pixels para pintar na linha, loop
+        add di, LARGURA_TELA * 2 - LARGURA_SPRITE_P ; Move o ponteiro pra pra proxima linha
+        pop cx
+    loop .prox_linha
     ret
 
+; Devolve a posição X/Y em DI
+; Registradores:
+;   AL -> Posição Y
+;   AH -> Posição X
 space_posicao_na_tela:
+    mov dx, ax                      ; Salva os valores de posição em DX
+    cbw  
+    imul di, ax, LARGURA_TELA * 2   ; A tela é um vetor que cresce na direção x, então para cada "Y" temos LARGURA TELA_PIXELS
+    mov al, dh                      ; AX = Y (Antigo AH que agora é 0)
+    shl ax, 1                       ; AX = AX * 2 (Escala)
+    add di, ax                      ; DI agora terá exatamente o pixel onde o sprite deve ser desenhado
+    ret
 
 
 space_sprites_bitmaps:
@@ -969,12 +1176,14 @@ space_sprites_bitmaps:
 
     dw 0FFFFh       ; Alien array
     dw 0FFFFh
-    db 70           ; player_x
+    db 75           ; player_x
     dw 230Ah        ; alien_y e alien x | 10 = Y, 35 = X
     db 20h          ; num de aliens = 32 
     db 0FBh         ; Direção =  -5
     dw 18           ; 18 Ticks para mover os aliens
     db 1            ; Muda o alien - entre 1 e -1
+    db 25           ; Distancia barreiars
+    db 5            ; Num Barreiras
         
 start:
     xor ax, ax
