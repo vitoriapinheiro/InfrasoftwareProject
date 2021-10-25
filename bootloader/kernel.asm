@@ -36,7 +36,7 @@ data:
         ; Constantes ----------------
         TIMER            equ 046Ch ; Nº de ticks desde a meia-noite
         BARREIRA_X       equ 25
-        BARREIRA_Y       equ 85
+        BARREIRA_Y       equ 76
         JOGADOR_Y        equ 93
         LARGURA_TELA     equ 320
         ALTURA_TELA      equ 200
@@ -994,13 +994,13 @@ space_prox_fase:
 fase_2:
     mov byte [num_barreiras], 3
     mov byte [dist_barreiras], 50
-    mov byte [move_timer], 15
+    mov byte [move_timer], 14
 jmp volta_fases
 
 fase_3:
     mov byte [num_barreiras], 2
     mov byte [dist_barreiras], 100
-    mov byte [move_timer], 12
+    mov byte [move_timer], 10
 jmp volta_fases
 
 space_printa_menu:
@@ -1249,8 +1249,16 @@ space_loop: ; Loop principal do jogo --------------------------------
             imul ax, ax,LARGURA_SPRITE + 4  ; X que o tiro vai sair
             xchg ah,al                      ; AL = Y
             add ax, [alien_y]
+
+            pusha
+            call space_posicao_na_tela
+            cmp byte [di], COR_TELA
+            je .reset
+            popa
             stosw                           ; Move pra o array de tiros
             jmp move_alien
+            .reset:
+                popa
             .prox_tiro:
         loop .checa_tiro
 
@@ -1286,7 +1294,7 @@ space_loop: ; Loop principal do jogo --------------------------------
             cmp byte [di], BARREIRA_Y     ; Did aliens breach the barriers?
             jg game_over                ; Yes, lost game :'(
             dec byte [move_timer]       ; Aliens will get slightly faster
-            cmp byte [move_timer], 1
+            cmp byte [move_timer], 2
             jne space_get_input
             add byte [move_timer], 1
 
@@ -1434,7 +1442,7 @@ space_sprites_bitmaps:
     dw 230Ah        ; alien_y e alien x | 10 = Y, 35 = X
     db 20h          ; num de aliens = 32 
     db 0FBh         ; Direção =  -5
-    dw 12           ; 18 Ticks para mover os aliens
+    dw 16           ; 12 Ticks para mover os aliens
     db 1            ; Muda o alien - entre 1 e -1
     db 25           ; Distancia barreiars
     db 5            ; Num Barreiras
