@@ -36,7 +36,7 @@ data:
         ; Constantes ----------------
         TIMER            equ 046Ch ; Nº de ticks desde a meia-noite
         BARREIRA_X       equ 25
-        BARREIRA_Y       equ 76
+        BARREIRA_Y       equ 80
         JOGADOR_Y        equ 93
         LARGURA_TELA     equ 320
         ALTURA_TELA      equ 200
@@ -994,13 +994,13 @@ space_prox_fase:
 fase_2:
     mov byte [num_barreiras], 3
     mov byte [dist_barreiras], 50
-    mov byte [move_timer], 14
+    mov byte [move_timer], 15
 jmp volta_fases
 
 fase_3:
     mov byte [num_barreiras], 2
     mov byte [dist_barreiras], 100
-    mov byte [move_timer], 10
+    mov byte [move_timer], 12
 jmp volta_fases
 
 space_printa_menu:
@@ -1291,8 +1291,8 @@ space_loop: ; Loop principal do jogo --------------------------------
             neg byte [aliens_direcao]   ; Move in opposite X direction
             dec di
             add byte [di], 5            ; Add to alienY value to move down
-            cmp byte [di], BARREIRA_Y     ; Did aliens breach the barriers?
-            jg game_over                ; Yes, lost game :'(
+            cmp byte [di], BARREIRA_Y+1     ; Did aliens breach the barriers?
+            jg space_game_over                ; Yes, lost game :'(
             dec byte [move_timer]       ; Aliens will get slightly faster
             cmp byte [move_timer], 2
             jne space_get_input
@@ -1442,7 +1442,7 @@ space_sprites_bitmaps:
     dw 230Ah        ; alien_y e alien x | 10 = Y, 35 = X
     db 20h          ; num de aliens = 32 
     db 0FBh         ; Direção =  -5
-    dw 16           ; 12 Ticks para mover os aliens
+    dw 18           ; 18 Ticks para mover os aliens
     db 1            ; Muda o alien - entre 1 e -1
     db 25           ; Distancia barreiars
     db 5            ; Num Barreiras
