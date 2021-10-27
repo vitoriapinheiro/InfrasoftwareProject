@@ -9,6 +9,59 @@ data:
         texto_menu_snake db 'T - JOGAR SNAKE', 0                ; texto jogar Snake console
 
     ; dados do Snake
+        ; ; dados de game status
+        ; game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
+        ; winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
+        ; tela_atual db 0                                         ; Status da tela atual | 0-> menu, 1 -> jogo
+
+        ; ; dados da tela
+        ; tela_largura dw 140h                                    ; janela feita com al = 13h (320x200)
+        ; tela_altura dw 0c8h     
+        ; margem_erro dw 6    
+        condicao_da_tela db 20
+
+        ; ; dados do tempo
+        ; tempo_aux dw 0                                          ; variável usado para checar se o tempo passou
+        ; TIMER db 300
+
+        ; ; dados da interface 
+        ; texto_jogador db '0'                                 ; texto da pontuação do jogador
+
+
+        ; direcao
+        CIMA db 0
+        BAIXO db 1
+        ESQUERDA db 2
+        DIREITA db 3
+
+        direcao db 4
+
+        ; dados da cobra
+        cobra_x dw 40
+        cobra_y dw 12
+        cor_da_cobra db 3
+        comprimento_da_cobra dw 1
+
+        array_x_cobra dw 1000h
+        array_y_cobra dw 2000h
+
+        ; dados do objeto
+        objeto_x dw 0A0h
+        objeto_y dw 064h
+        tamanho_do_objeto dw 15
+        cor_do_objeto db 15
+
+        ; Textos Snake -------------------
+        snake_texto_main_menu        db 'BEM-VINDO AO SNAKE GAME', 0
+        snake_instrucoes1            db 'COMA 15 MACAS', 0
+        snake_instrucoes2            db 'PARA CRESCER E ZERAR O JOGO', 0
+        snake_texto_jogar            db 'JOGAR - PRESSIONE T', 0
+        snake_texto_sair_jogo        db 'SAIR - PRESSIONE N', 0
+        snake_texto_controle         db 'USE A/W/S/D PARA SE MOVER', 0
+        snake_texto_reset            db 'RESET COM R', 0
+        snake_good_luck              db 'BOA SORTE!', 0
+        snake_fim                    db 'GAME OVER', 0
+        snake_parabens               db 'PARABENS!', 0
 
     ; dados do Space Invaders =======================================================
         ; Variáveis de Vídeo -------- 320 * 200 = 64000 = 0FA00h
@@ -53,7 +106,7 @@ data:
         COR_TIRO_ALIEN  equ 21h
         COR_TIRO_PLAYER equ 35h
         
-        ; Textos -------------------
+        ; Textos Space -------------------
         space_texto_main_menu        db 'BEM-VINDO AO SPACE INVADERS' ,0
         space_instrucoes1            db 'DERROTE OS ALIENS', 0
         space_instrucoes2            db 'ANTES QUE ELES CHEGUEM ATE VOCE',0
@@ -170,13 +223,58 @@ data:
 
     call prints                     ; print o texto
 %endmacro
-jogar_snake:
-    mov al, 1
-    mov [game_status], al
-    xor al, al
-    mov [tela_atual], al
 
-    ; jmp snake_loop
+%macro snake_limpa_tela 0
+    xor ax, ax
+    mov al, COR_TELA
+    xor di, di
+    mov cx, LARGURA_TELA*ALTURA_TELA    ; Tamanho da tela
+    rep stosb
+%endmacro
+
+%macro temporizador_delay_snake 1
+    mov ax, [CS:TIMER]  
+    add ax, %1; Incremento em um segundo
+    .wait:
+        cmp [CS:TIMER], ax ; Checo se já se passou um segundo
+        jl .wait
+%endmacro
+jogar_snake:                        ; prepara a tela para o jogo
+    xor ax, ax                      ; Limpar os registradores
+    xor bx, bx
+    xor cx, cx
+
+    mov ax, 0013h                   ; Modo de video
+
+    int 10h
+    push 0A000h
+    pop es                          ; Movendo o ponteiro es para o primeiro pixel da tela
+
+    pop ax
+    push ax
+
+    cmp ax, 1
+    jle print_inicio
+
+    cmp ax, 2
+    je snake_ganhou
+
+    print_inicio:
+        call print_main_menu_snake
+        cmp al, 1
+        je start
+        jmp continua_inic_snake
+
+    continua_inic_snake:
+
+    ; Mover os sprite iniciais para a memoria (densenhar snake ?)
+
+    ; FAZER ESSA PARTE
+
+    volta_fases:
+    push ax
+
+jmp snake_loop
 
 jogar_pong:
     mov al, 1
@@ -210,6 +308,10 @@ menu_console:
         je prep_jogar_space
         cmp al, 'S'
         je prep_jogar_space
+        cmp al, 't'
+        je prep_jogar_snake
+        cmp al, 'T'
+        je prep_jogar_snake
 
         jmp .espera_tecla
 
@@ -389,7 +491,7 @@ print_game_over_menu:
         mov [tela_atual], al 
 
     
-print_main_menu:
+print_main_menu_pong:
     call limpar_tela
 
     print_string 04h, 06h, texto_main_menu          ; print texto main menu
@@ -834,52 +936,281 @@ mover_barras:               ; move as barras verticalmente
     exit_mov_barra:
         ret
 
-pong_loop:                     ; gera a sensação de movimento
-        xor al , al
+snake_loop:                     ; Loop principal do jogo
+    snake_limpa_tela
 
-        cmp [tela_atual], al        ; se a tela atual for a de menu
-        je mostra_main_menu         ; mostra o menu
+    ; Desenhar a cobra
+	xor bx, bx
+	mov cx, [comprimento_da_cobra]
+	mov ax, cor_da_cobra
 
-        cmp [game_status], al       ; se o jogo acabar
-        je mostra_game_over         ; mostra a tela de game over
-        
-        mov ah, 00h                 ; get system time
-        int 1ah                     ; cx:dx = numero de ticks de clock desde a meia noite
+	.snake_laco:
+		imul di, [array_y_cobra + bx], tela_largura*2
+		imul dx, [array_x_cobra + bx], 2
+		add di, dx
+		stosw
+		inc bx
+		inc bx
+	loop .snake_laco
 
-        cmp dx, [tempo_aux]         ; verifica se o tempo passou (provavelmente 1/100 s)
-        je pong_loop
+	; Desenhar objeto
+	imul di, [objeto_y], tela_largura*2
+	imul dx, 2
+	add di, dx
+    mov ax, [cor_do_objeto]
+	stosw
 
-        ; o tempo passou
+	; Mover cobra para direcao atual
+	mov al, [direcao]
 
-        mov [tempo_aux], dx         ; atualiza o tempo
+	cmp al, CIMA
+	je mover_cima
 
-        call limpar_tela            ; da update na tela para nao deixar "rastro"
-         
-        call mover_bola             ; muda as coordenadas da bola      
+	cmp al, BAIXO
+	je mover_baixo
 
-        call print_bola             ; desenha a bola 
+	cmp al, ESQUERDA
+	je mover_esquerda
 
-        call mover_barras           ; move e checa os movimentos validos das barras
+	cmp al, DIREITA
+	je mover_direita
 
-        call print_barra_esquerda   ; desenha a barra direita
+	jmp atualizar_cobra
 
-        call print_barra_direita    ; desenha a barra esquerda
+	mover_cima:
+		dec word [cobra_y]			;; Move uma linha para cima na tela
+		jmp atualizar_cobra
+	
+	mover_baixo:
+		inc word [cobra_y]			;; Move uma linha para baixo na tela
+		jmp atualizar_cobra
 
-        call print_UI
-
-        jmp pong_loop 
+	mover_esquerda:
+		dec word [cobra_x]          ;; Move uma coluna para a esquerda na tela
+        jmp atualizar_cobra
     
-        mostra_game_over:
-            call print_game_over_menu
-            jmp pong_loop
+    mover_direita:
+        inc word [cobra_x]          ;; Move uma coluna para a direita na tela
+
+    atualizar_cobra:
+        ;; Atualiza todos os segmentos da cobra depois da cabeca, itera de tras pra frente 
+        imul bx, [comprimento_da_cobra], 2
+        .snake_laco:
+            mov ax, [array_x_cobra - 2 + bx]
+            mov word [array_x_cobra + bx], ax
+            mov ax, [array_y_cobra - 2 + bx]
+            mov word [array_y_cobra + bx], ax
+
+            dec bx
+            dec bx
+        jnz .snake_laco
+
+    ;; Armazena os valores atualizados da cabeca da cobra nos arrays
+    mov ax, [cobra_x]
+    mov word [array_x_cobra], ax
+    mov ax, [cobra_y]
+    mov word [array_y_cobra], ax
+
+    ;; Condicoes de derrota
+    ;; 1) Bater em alguma das bordas da tela
+    cmp word [cobra_y], -1                      ;; Topo da tela
+    je snake_game_over
+
+    cmp word [cobra_y], tela_altura             ;; Baixo da tela
+    je snake_game_over
+
+    cmp word [cobra_x], -1                      ;; Esquerda da tela
+    je snake_game_over
+
+    cmp word [cobra_x], tela_largura            ;; Direita da tela
+    je snake_game_over
+
+    ;; 2) Bateu em alguma parte da cobra
+    cmp word [comprimento_da_cobra], 1          ;; So tem o tamanho inicial de 1
+    je pegar_input_cobra
+
+    mov bx, 2
+    mov cx, [comprimento_da_cobra]
+    checar_colisao__cobra_loop:
+        mov ax, [cobra_x]
+        cmp ax, [array_x_cobra + bx]
+        jne .incremento
+
+        mov ax, [cobra_y]
+        cmp ax, [array_y_cobra + bx]
+        je snake_game_over
+        
+        .incremento: 
+            inc bx
+            inc bx
+    loop checar_colisao__cobra_loop
+
+    pegar_input_cobra:
+        mov bl, [direcao]
+
+        mov ah, 1
+        int 16h
+        jz checar_objeto
+
+        xor ah, ah
+        int 16h
+
+        cmp al, 'w'
+        je w_pressed
+
+        cmp al, 's'
+        je s_pressed
+
+        cmp al, 'a'
+        je a_pressed
+        
+        cmp al, 'd'
+        je d_pressed
+        
+    cmp al, 'r'
+    je r_pressed
+
+        jmp checar_objeto
+        
+        w_pressed:              ;; Mover para cima
+            mov bl, CIMA
+            jmp checar_objeto
+        
+        s_pressed:              ;; Mover para baixo
+            mov bl, BAIXO
+            jmp checar_objeto
+
+        a_pressed:              ;; Mover para esquerda
+            mov bl, ESQUERDA
+            jmp checar_objeto
             
-        mostra_main_menu:
-            call print_main_menu
-            jmp pong_loop
-            
-        end:                        
-            ; Menu do console
-            call menu_console
+        d_pressed:              ;; Mover para direita
+            mov bl, DIREITA
+            jmp checar_objeto
+
+        r_pressed:              ;; Resetar
+            int 19h             ;; Reload bootsector
+        
+    checar_objeto:
+        mov byte [direcao], bl
+        
+        mov ax, [cobra_x]
+        cmp ax, [objeto_x]
+        jne delay_loop
+
+        mov ax, [cobra_y]
+        cmp ax, [objeto_y]
+        jne delay_loop
+
+        ;; Se bateu no objeto, aumenta o tamanho da cobra
+        inc word [comprimento_da_cobra]
+        cmp word [comprimento_da_cobra], condicao_da_tela
+        je snake_ganhou
+
+snake_game_over: ; Fim de Jogo e Reset
+    snake_limpa_tela
+    xor ax,ax
+    mov ds,ax
+    print_string 0Ah,0Fh, space_fim
+    temporizador_delay_snake 30
+    push 1
+    jmp jogar_snake
+snake_ganhou:
+    snake_limpa_tela
+    xor ax,ax
+    mov ds,ax
+    print_string 0Ah,0Fh, snake_parabens
+    temporizador_delay_snake 30
+    push 1
+    jmp jogar_snake
+        
+    posicao_aleatoria:
+        xor ah, ah
+        int 1Ah
+        mov ax, dx
+        xor dx, dx
+        mov cx, tela_largura
+        div cx
+        mov word [objeto_x], dx
+    
+        xor ah, ah
+        int 1Ah
+        mov ax, dx
+        xor dx, dx
+        mov cx, tela_altura
+        div cx
+        mov word [objeto_y], dx
+
+    xor bx, bx
+    mov cx, [comprimento_da_cobra]
+    .check_loop:
+        mov ax, [objeto_x]
+        cmp ax, [comprimento_da_cobra + bx]
+        jne .incremento
+
+        mov ax, [objeto_y]
+        cmp ax, [comprimento_da_cobra + bx]
+        je posicao_aleatoria
+
+        .incremento:
+            inc bx
+            inc bx
+    loop .check_loop
+
+    delay_loop:
+        mov bx, [TIMER]
+        inc bx
+        inc bx
+        .delay:
+            cmp [TIMER], bx
+            jl .delay
+
+pong_loop:                      ; gera a sensação de movimento
+    xor al , al
+
+    cmp [tela_atual], al        ; se a tela atual for a de menu
+    je mostra_main_menu         ; mostra o menu
+
+    cmp [game_status], al       ; se o jogo acabar
+    je mostra_game_over         ; mostra a tela de game over
+    
+    mov ah, 00h                 ; get system time
+    int 1ah                     ; cx:dx = numero de ticks de clock desde a meia noite
+
+    cmp dx, [tempo_aux]         ; verifica se o tempo passou (provavelmente 1/100 s)
+    je pong_loop
+
+    ; o tempo passou
+
+    mov [tempo_aux], dx         ; atualiza o tempo
+
+    call limpar_tela            ; da update na tela para nao deixar "rastro"
+        
+    call mover_bola             ; muda as coordenadas da bola      
+
+    call print_bola             ; desenha a bola 
+
+    call mover_barras           ; move e checa os movimentos validos das barras
+
+    call print_barra_esquerda   ; desenha a barra direita
+
+    call print_barra_direita    ; desenha a barra esquerda
+
+    call print_UI
+
+    jmp pong_loop 
+
+    mostra_game_over:
+        call print_game_over_menu
+        jmp pong_loop
+        
+    mostra_main_menu:
+        call print_main_menu_pong
+        jmp pong_loop
+        
+    end:                        
+        ; Menu do console
+        call menu_console
 
 ; Space Invaders ====================================================
 ; Talvez dê bug com o sp e o bp
@@ -892,7 +1223,7 @@ pong_loop:                     ; gera a sensação de movimento
     rep stosb
 %endmacro
 
-%macro temporizador_delay 1
+%macro temporizador_delay_space 1
     mov ax, [CS:TIMER]  
     add ax, %1; Incremento em um segundo
     .wait:
@@ -903,6 +1234,46 @@ pong_loop:                     ; gera a sensação de movimento
 prep_jogar_space:
     push 1
 jmp jogar_space
+
+print_main_menu_snake:
+    pusha
+    snake_limpa_tela                          
+
+    print_string 02h, 07h, snake_texto_main_menu
+    print_string 07h, 0Ch, snake_instrucoes1
+    print_string 09h, 05h, snake_instrucoes2
+    print_string 0Bh, 09h, snake_texto_jogar
+    print_string 0Fh, 05h, snake_texto_sair_jogo            
+    print_string 11h, 05h, snake_texto_controle          
+    print_string 13h, 05h, snake_texto_reset
+
+    .espera_tecla:
+        mov ah, 00h
+        int 16h         
+        cmp al, 't'
+        je .jogar
+        cmp al, 'T'
+        je .jogar
+        cmp al, 'n'
+        je .end
+        cmp al, 'N'
+        je .end
+        jmp .espera_tecla
+
+    .jogar:
+        popa
+        snake_limpa_tela
+        print_string 0Ah, 11h, snake_good_luck
+        temporizador_delay_space 30
+        mov al,0
+        ret
+    .end:
+        popa
+        mov al,1
+        ret
+prep_jogar_snake:
+    push 1
+jmp jogar_snake
 
 jogar_space: ; Prepara a tela para o jogo ---------------------------
     xor ax, ax
@@ -927,8 +1298,6 @@ jogar_space: ; Prepara a tela para o jogo ---------------------------
     cmp ax, 4
     jge space_ganhou
 
-
-    
     print_fase_1:
 
         call space_printa_menu
@@ -939,13 +1308,13 @@ jogar_space: ; Prepara a tela para o jogo ---------------------------
     print_fase_2:
         space_limpa_tela
         print_string 0Ah, 11h, space_fase2
-        temporizador_delay 30
+        temporizador_delay_space 30
         jmp continua_inic_space
     
     print_fase_3:
         space_limpa_tela
         print_string 0Ah, 11h, space_fase3
-        temporizador_delay 30
+        temporizador_delay_space 30
         jmp continua_inic_space
 
     continua_inic_space:
@@ -1040,7 +1409,7 @@ space_printa_menu:
         popa
         space_limpa_tela
         print_string 0Ah, 11h, space_fase1
-        temporizador_delay 30
+        temporizador_delay_space 30
         mov al,0
         ret
     .end:
@@ -1357,7 +1726,7 @@ space_loop: ; Loop principal do jogo --------------------------------
             jmp jogar_space
 
     .fim:
-    temporizador_delay 1
+    temporizador_delay_space 1
 
 jmp space_loop
 
@@ -1366,7 +1735,7 @@ space_game_over: ; Fim de Jogo e Reset
     xor ax,ax
     mov ds,ax
     print_string 0Ah,0Fh, space_fim
-    temporizador_delay 30
+    temporizador_delay_space 30
     push 1
     jmp jogar_space
 
@@ -1375,7 +1744,7 @@ space_ganhou:
     xor ax,ax
     mov ds,ax
     print_string 0Ah,0Fh, space_parabens
-    temporizador_delay 30
+    temporizador_delay_space 30
     push 1
     jmp jogar_space
 

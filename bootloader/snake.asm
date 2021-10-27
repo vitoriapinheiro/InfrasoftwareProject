@@ -104,7 +104,7 @@ jogar_snake:
     xor al, al
     mov [tela_atual], al
 
-    jmp snake_loop
+    jmp snake_laco
 
 menu_console:
     call limpar_tela
@@ -250,75 +250,8 @@ limpar_tela:
 
     ret
 
-; reset_bola:
-;     ; a bola volta para a posição X de origem
-;     mov ax, [bola_origem_X]
-;     mov [bola_X], ax
 
-;     ; a bola volta para a posicao Y de origem
-;     mov ax, [bola_origem_Y]
-;     mov [bola_Y], ax
-
-;     ; a barra esquerda volta para a posicao inicial
-;     mov ax, 0Ah
-;     mov [barra_esquerda_X], ax
-;     mov [barra_esquerda_Y], ax
-
-;     ; a barra direita volta para a posicao inicial
-;     mov ax, 132h
-;     mov [barra_direita_X], ax
-;     mov ax, 0A0h
-;     mov [barra_direita_Y], ax
-
-;     xor ax, ax
-;     cmp [bola_vel_X], ax    
-;     jl teste_inv_1  
-;     jg teste_inv_2          
-
-; ; serve para o jogo reiniciar de modo que os jogadores sempre consigam pegar a primeira bola
-
-; ; se V_X < 0 && V_Y < 0, inverte
-
-;     teste_inv_1:
-;         xor ax, ax 
-;         cmp [bola_vel_Y], ax
-;         jl inv_vel_Y_gol 
-        
-;         jmp pass
-
-; ; se V_X > 0 && V_Y > 0, inverte 
-;     teste_inv_2:
-;         xor ax, ax
-;         cmp [bola_vel_Y], ax
-;         jg inv_vel_Y_gol
-
-;         jmp pass
-
-;     pass:
-
-;     call inv_vel_X
-
-    
-
-;     ret
-
-; pontuar_jogador:
-;     mov al, [barra_esquerda_pontos]                 ; pontua o jogador um 
-;     inc al
-;     mov [barra_esquerda_pontos], al
-
-;     call reset_bola                                 ; bola volta para o início
-
-;     call atualiza_texto_jogador                  ; Atualiza a pontuação na tela do jogador 1
-
-;     ; checa se o jogador dois fez 5 pontos
-;     mov al, [barra_esquerda_pontos]
-;     cmp al, 05h
-;     je game_over
-
-;     ret
-
-snake_loop:                     	; gera a sensação de movimento
+snake_laco:                     	; gera a sensação de movimento
         xor al , al
 
         cmp [tela_atual], al        ; se a tela atual for a de menu
@@ -331,7 +264,7 @@ snake_loop:                     	; gera a sensação de movimento
         int 1ah                     ; cx:dx = numero de ticks de clock desde a meia noite
 
         cmp dx, [tempo_aux]         ; verifica se o tempo passou (provavelmente 1/100 s)
-        je snake_loop
+        je snake_laco
 
         ; o tempo passou
 
@@ -339,15 +272,15 @@ snake_loop:                     	; gera a sensação de movimento
 
         call limpar_tela            ; da update na tela para nao deixar "rastro"
 
-        jmp snake_loop 
+        jmp snake_laco 
     
         mostra_game_over:
             call print_game_over_menu
-            jmp snake_loop
+            jmp snake_laco
             
         mostra_main_menu:
             call print_main_menu
-            jmp snake_loop
+            jmp snake_laco
             
         end:                        
             ; Menu do console
@@ -365,28 +298,28 @@ game_loop:
 	mov cx, ax
 	rep stosw
 
-	;;Desenhar a cobra
+	; Desenhar a cobra
 	xor bx, bx
 	mov cx, [comprimento_da_cobra]
 	mov ax, cor_da_cobra
 
-	.snake_loop:
+	.snake_laco:
 		imul di, [array_y_cobra + bx], tela_largura*2
 		imul dx, [array_x_cobra + bx], 2
 		add di, dx
 		stosw
 		inc bx
 		inc bx
-	loop .snake_loop
+	loop .snake_laco
 
-	;;Desenhar objeto
+	; Desenhar objeto
 	imul di, [objeto_y], tela_largura*2
 	imul dx, 2
 	add di, dx
     mov ax, [cor_do_objeto]
 	stosw
 
-	;;Mover cobra para direcao atual
+	; Mover cobra para direcao atual
 	mov al, [direcao]
 
 	cmp al, CIMA
@@ -421,7 +354,7 @@ game_loop:
     atualizar_cobra:
         ;; Atualiza todos os segmentos da cobra depois da cabeca, itera de tras pra frente 
         imul bx, [comprimento_da_cobra], 2
-        .snake_loop:
+        .snake_laco:
             mov ax, [array_x_cobra - 2 + bx]
             mov word [array_x_cobra + bx], ax
             mov ax, [array_y_cobra - 2 + bx]
@@ -429,7 +362,7 @@ game_loop:
 
             dec bx
             dec bx
-        jnz .snake_loop
+        jnz .snake_laco
 
     ;; Armazena os valores atualizados da cabeca da cobra nos arrays
     mov ax, [cobra_x]
