@@ -239,7 +239,8 @@ data:
         cmp [CS:TIMER], ax ; Checo se já se passou um segundo
         jl .wait
 %endmacro
-jogar_snake:                        ; prepara a tela para o jogo
+jogar_snake:                       ; prepara a tela para o jogo
+
     xor ax, ax                      ; Limpar os registradores
     xor bx, bx
     xor cx, cx
@@ -270,7 +271,231 @@ jogar_snake:                        ; prepara a tela para o jogo
     ; Mover os sprite iniciais para a memoria (densenhar snake ?)
 
     ; FAZER ESSA PARTE
+    ; Desenhar a cobra
+	xor bx, bx
+	mov cx, [comprimento_da_cobra]
+	mov ax, cor_da_cobra
 
+	.snake_laco:
+		imul di, [array_y_cobra + bx], tela_largura*2
+		imul dx, [array_x_cobra + bx], 2
+		add di, dx
+		stosw
+		inc bx
+		inc bx
+	loop .snake_laco
+
+	; Desenhar objeto
+	imul di, [objeto_y], tela_largura*2
+	imul dx, 2
+	add di, dx
+    mov ax, [cor_do_objeto]
+	stosw
+
+	; Mover cobra para direcao atual
+	mov al, [direcao]
+
+	cmp al, CIMA
+	je mover_cima
+
+	cmp al, BAIXO
+	je mover_baixo
+
+	cmp al, ESQUERDA
+	je mover_esquerda
+
+	cmp al, DIREITA
+	je mover_direita
+
+	jmp atualizar_cobra
+
+	mover_cima:
+		dec word [cobra_y]			;; Move uma linha para cima na tela
+		jmp atualizar_cobra
+	
+	mover_baixo:
+		inc word [cobra_y]			;; Move uma linha para baixo na tela
+		jmp atualizar_cobra
+
+	mover_esquerda:
+		dec word [cobra_x]          ;; Move uma coluna para a esquerda na tela
+        jmp atualizar_cobra
+    
+    mover_direita:
+        inc word [cobra_x]          ;; Move uma coluna para a direita na tela
+
+    atualizar_cobra:
+        ;; Atualiza todos os segmentos da cobra depois da cabeca, itera de tras pra frente 
+        imul bx, [comprimento_da_cobra], 2
+        .snake_laco:
+            mov ax, [array_x_cobra - 2 + bx]
+            mov word [array_x_cobra + bx], ax
+            mov ax, [array_y_cobra - 2 + bx]
+            mov word [array_y_cobra + bx], ax
+
+            dec bx
+            dec bx
+        jnz .snake_laco
+
+    ;; Armazena os valores atualizados da cabeca da cobra nos arrays
+    mov ax, [cobra_x]
+    mov word [array_x_cobra], ax
+    mov ax, [cobra_y]
+    mov word [array_y_cobra], ax
+
+    ;; Condicoes de derrota
+    ;; 1) Bater em alguma das bordas da tela
+    cmp word [cobra_y], -1                      ;; Topo da tela
+    je snake_game_over
+
+    cmp word [cobra_y], tela_altura             ;; Baixo da tela
+    je snake_game_over
+
+    cmp word [cobra_x], -1                      ;; Esquerda da tela
+    je snake_game_over
+
+    cmp word [cobra_x], tela_largura            ;; Direita da tela
+    je snake_game_over
+
+    ;; 2) Bateu em alguma parte da cobra
+    cmp word [comprimento_da_cobra], 1          ;; So tem o tamanho inicial de 1
+    je pegar_input_cobra
+
+    mov bx, 2
+    mov cx, [comprimento_da_cobra]
+    checar_colisao__cobra_loop:
+        mov ax, [cobra_x]
+        cmp ax, [array_x_cobra + bx]
+        jne .incremento
+
+        mov ax, [cobra_y]
+        cmp ax, [array_y_cobra + bx]
+        je snake_game_over
+        
+        .incremento: 
+            inc bx
+            inc bx
+    loop checar_colisao__cobra_loop
+
+    pegar_input_cobra:
+        mov bl, [direcao]
+
+        mov ah, 1
+        int 16h
+        jz checar_objeto
+
+        xor ah, ah
+        int 16h
+
+        cmp al, 'w'
+        je w_pressed
+
+        cmp al, 's'
+        je s_pressed
+
+        cmp al, 'a'
+        je a_pressed
+        
+        cmp al, 'd'
+        je d_pressed
+        
+    cmp al, 'r'
+    je r_pressed
+
+        jmp checar_objeto
+        
+        w_pressed:              ;; Mover para cima
+            mov bl, CIMA
+            jmp checar_objeto
+        
+        s_pressed:              ;; Mover para baixo
+            mov bl, BAIXO
+            jmp checar_objeto
+
+        a_pressed:              ;; Mover para esquerda
+            mov bl, ESQUERDA
+            jmp checar_objeto
+            
+        d_pressed:              ;; Mover para direita
+            mov bl, DIREITA
+            jmp checar_objeto
+
+        r_pressed:              ;; Resetar
+            int 19h             ;; Reload bootsector
+        
+    checar_objeto:
+        mov byte [direcao], bl
+        
+        mov ax, [cobra_x]
+        cmp ax, [objeto_x]
+        jne delay_loop
+
+        mov ax, [cobra_y]
+        cmp ax, [objeto_y]
+        jne delay_loop
+
+        ;; Se bateu no objeto, aumenta o tamanho da cobra
+        inc word [comprimento_da_cobra]
+        cmp word [comprimento_da_cobra], condicao_da_tela
+        je snake_ganhou
+
+snake_game_over: ; Fim de Jogo e Reset
+    snake_limpa_tela
+    xor ax,ax
+    mov ds,ax
+    print_string 0Ah,0Fh, space_fim
+    temporizador_delay_snake 30
+    push 1
+    jmp jogar_snake
+snake_ganhou:
+    snake_limpa_tela
+    xor ax,ax
+    mov ds,ax
+    print_string 0Ah,0Fh, snake_parabens
+    temporizador_delay_snake 30
+    push 1
+    jmp jogar_snake
+        
+    posicao_aleatoria:
+        xor ah, ah
+        int 1Ah
+        mov ax, dx
+        xor dx, dx
+        mov cx, tela_largura
+        div cx
+        mov word [objeto_x], dx
+    
+        xor ah, ah
+        int 1Ah
+        mov ax, dx
+        xor dx, dx
+        mov cx, tela_altura
+        div cx
+        mov word [objeto_y], dx
+
+    xor bx, bx
+    mov cx, [comprimento_da_cobra]
+    .check_loop:
+        mov ax, [objeto_x]
+        cmp ax, [comprimento_da_cobra + bx]
+        jne .incremento
+
+        mov ax, [objeto_y]
+        cmp ax, [comprimento_da_cobra + bx]
+        je posicao_aleatoria
+
+        .incremento:
+            inc bx
+            inc bx
+    loop .check_loop
+
+    delay_loop:
+        mov bx, [TIMER]
+        inc bx
+        inc bx
+        .delay:
+            cmp [TIMER], bx
+            jl .delay
     volta_fases:
     push ax
 
@@ -939,232 +1164,6 @@ mover_barras:               ; move as barras verticalmente
 snake_loop:                     ; Loop principal do jogo
     snake_limpa_tela
 
-    ; Desenhar a cobra
-	xor bx, bx
-	mov cx, [comprimento_da_cobra]
-	mov ax, cor_da_cobra
-
-	.snake_laco:
-		imul di, [array_y_cobra + bx], tela_largura*2
-		imul dx, [array_x_cobra + bx], 2
-		add di, dx
-		stosw
-		inc bx
-		inc bx
-	loop .snake_laco
-
-	; Desenhar objeto
-	imul di, [objeto_y], tela_largura*2
-	imul dx, 2
-	add di, dx
-    mov ax, [cor_do_objeto]
-	stosw
-
-	; Mover cobra para direcao atual
-	mov al, [direcao]
-
-	cmp al, CIMA
-	je mover_cima
-
-	cmp al, BAIXO
-	je mover_baixo
-
-	cmp al, ESQUERDA
-	je mover_esquerda
-
-	cmp al, DIREITA
-	je mover_direita
-
-	jmp atualizar_cobra
-
-	mover_cima:
-		dec word [cobra_y]			;; Move uma linha para cima na tela
-		jmp atualizar_cobra
-	
-	mover_baixo:
-		inc word [cobra_y]			;; Move uma linha para baixo na tela
-		jmp atualizar_cobra
-
-	mover_esquerda:
-		dec word [cobra_x]          ;; Move uma coluna para a esquerda na tela
-        jmp atualizar_cobra
-    
-    mover_direita:
-        inc word [cobra_x]          ;; Move uma coluna para a direita na tela
-
-    atualizar_cobra:
-        ;; Atualiza todos os segmentos da cobra depois da cabeca, itera de tras pra frente 
-        imul bx, [comprimento_da_cobra], 2
-        .snake_laco:
-            mov ax, [array_x_cobra - 2 + bx]
-            mov word [array_x_cobra + bx], ax
-            mov ax, [array_y_cobra - 2 + bx]
-            mov word [array_y_cobra + bx], ax
-
-            dec bx
-            dec bx
-        jnz .snake_laco
-
-    ;; Armazena os valores atualizados da cabeca da cobra nos arrays
-    mov ax, [cobra_x]
-    mov word [array_x_cobra], ax
-    mov ax, [cobra_y]
-    mov word [array_y_cobra], ax
-
-    ;; Condicoes de derrota
-    ;; 1) Bater em alguma das bordas da tela
-    cmp word [cobra_y], -1                      ;; Topo da tela
-    je snake_game_over
-
-    cmp word [cobra_y], tela_altura             ;; Baixo da tela
-    je snake_game_over
-
-    cmp word [cobra_x], -1                      ;; Esquerda da tela
-    je snake_game_over
-
-    cmp word [cobra_x], tela_largura            ;; Direita da tela
-    je snake_game_over
-
-    ;; 2) Bateu em alguma parte da cobra
-    cmp word [comprimento_da_cobra], 1          ;; So tem o tamanho inicial de 1
-    je pegar_input_cobra
-
-    mov bx, 2
-    mov cx, [comprimento_da_cobra]
-    checar_colisao__cobra_loop:
-        mov ax, [cobra_x]
-        cmp ax, [array_x_cobra + bx]
-        jne .incremento
-
-        mov ax, [cobra_y]
-        cmp ax, [array_y_cobra + bx]
-        je snake_game_over
-        
-        .incremento: 
-            inc bx
-            inc bx
-    loop checar_colisao__cobra_loop
-
-    pegar_input_cobra:
-        mov bl, [direcao]
-
-        mov ah, 1
-        int 16h
-        jz checar_objeto
-
-        xor ah, ah
-        int 16h
-
-        cmp al, 'w'
-        je w_pressed
-
-        cmp al, 's'
-        je s_pressed
-
-        cmp al, 'a'
-        je a_pressed
-        
-        cmp al, 'd'
-        je d_pressed
-        
-    cmp al, 'r'
-    je r_pressed
-
-        jmp checar_objeto
-        
-        w_pressed:              ;; Mover para cima
-            mov bl, CIMA
-            jmp checar_objeto
-        
-        s_pressed:              ;; Mover para baixo
-            mov bl, BAIXO
-            jmp checar_objeto
-
-        a_pressed:              ;; Mover para esquerda
-            mov bl, ESQUERDA
-            jmp checar_objeto
-            
-        d_pressed:              ;; Mover para direita
-            mov bl, DIREITA
-            jmp checar_objeto
-
-        r_pressed:              ;; Resetar
-            int 19h             ;; Reload bootsector
-        
-    checar_objeto:
-        mov byte [direcao], bl
-        
-        mov ax, [cobra_x]
-        cmp ax, [objeto_x]
-        jne delay_loop
-
-        mov ax, [cobra_y]
-        cmp ax, [objeto_y]
-        jne delay_loop
-
-        ;; Se bateu no objeto, aumenta o tamanho da cobra
-        inc word [comprimento_da_cobra]
-        cmp word [comprimento_da_cobra], condicao_da_tela
-        je snake_ganhou
-
-snake_game_over: ; Fim de Jogo e Reset
-    snake_limpa_tela
-    xor ax,ax
-    mov ds,ax
-    print_string 0Ah,0Fh, space_fim
-    temporizador_delay_snake 30
-    push 1
-    jmp jogar_snake
-snake_ganhou:
-    snake_limpa_tela
-    xor ax,ax
-    mov ds,ax
-    print_string 0Ah,0Fh, snake_parabens
-    temporizador_delay_snake 30
-    push 1
-    jmp jogar_snake
-        
-    posicao_aleatoria:
-        xor ah, ah
-        int 1Ah
-        mov ax, dx
-        xor dx, dx
-        mov cx, tela_largura
-        div cx
-        mov word [objeto_x], dx
-    
-        xor ah, ah
-        int 1Ah
-        mov ax, dx
-        xor dx, dx
-        mov cx, tela_altura
-        div cx
-        mov word [objeto_y], dx
-
-    xor bx, bx
-    mov cx, [comprimento_da_cobra]
-    .check_loop:
-        mov ax, [objeto_x]
-        cmp ax, [comprimento_da_cobra + bx]
-        jne .incremento
-
-        mov ax, [objeto_y]
-        cmp ax, [comprimento_da_cobra + bx]
-        je posicao_aleatoria
-
-        .incremento:
-            inc bx
-            inc bx
-    loop .check_loop
-
-    delay_loop:
-        mov bx, [TIMER]
-        inc bx
-        inc bx
-        .delay:
-            cmp [TIMER], bx
-            jl .delay
-
 pong_loop:                      ; gera a sensação de movimento
     xor al , al
 
@@ -1350,7 +1349,7 @@ jogar_space: ; Prepara a tela para o jogo ---------------------------
     cmp ax, 3
     je fase_3
 
-    volta_fases:
+    ; volta_fases:
     push ax
     
     
