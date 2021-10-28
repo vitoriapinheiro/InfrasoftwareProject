@@ -1,17 +1,17 @@
-; SETUP ---------------
+;; SETUP ---------------
 ;org 07C00h		; Set bootsector to be at memory location hex 7C00h (UNCOMMENT IF USING AS BOOTSECTOR)
 org 8000h		; Set memory offsets to start here
 
 jmp setup_game 
 
 ;; CONSTANTS
-VIDMEM		equ 0B800h
-SCREENW		equ 80
-SCREENH		equ 25
+VIDMEM		equ 0A000h
+SCREENW		equ 320
+SCREENH		equ 200
 WINCOND		equ 20
-BGCOLOR		equ 1020h
-APPLECOLOR  equ 4020h
-SNAKECOLOR  equ 2020h
+BGCOLOR		equ 1h
+APPLECOLOR  equ 2h
+SNAKECOLOR  equ 3h
 TIMER       equ 046Ch
 SNAKEXARRAY equ 1000h
 SNAKEYARRAY equ 2000h
@@ -31,7 +31,7 @@ snakeLength: dw 1
 ;; LOGIC --------------------
 setup_game:
 	;; Set video mode - VGA mode 03h (80x25 text mode, 16 colors)
-	mov ax, 1112h
+	mov ax, 013h
 	int 10h
 
 	;; Set up video memory
@@ -44,23 +44,22 @@ setup_game:
 	mov ax, [playerY]
 	mov word [SNAKEYARRAY], ax
 	
-	;; Hide cursor
-	mov ah, 02h
-	mov dx, 2600h	; DH = row, DL = col, cursor is off the visible screen
-	int 10h
+	push es
+    pop ds
 
 ;; Game loop
 game_loop:
 	;; Clear screen every loop iteration
-	mov ax, BGCOLOR
+	xor ax,ax
+    mov al, BGCOLOR
 	xor di, di
 	mov cx, SCREENW*SCREENH
-	rep stosw				; mov [ES:DI], AX & inc di
+	rep stosb				; mov [ES:DI], AX & inc di
 
 	;; Draw snake
 	xor bx, bx				; Array index
-	mov cx, [snakeLength]	; Loop counter
-	mov ax, SNAKECOLOR
+	mov cl, [snakeLength]	; Loop counter
+	mov al, SNAKECOLOR
 	.snake_loop:
 		imul di, [SNAKEYARRAY+bx], SCREENW*2	; Y position of snake segment, 2 bytes per character
 		imul dx, [SNAKEXARRAY+bx], 2			; X position of snake segment, 2 bytes per character
@@ -74,7 +73,7 @@ game_loop:
 	imul di, [appleY], SCREENW*2
 	imul dx, [appleX], 2
 	add di, dx
-	mov ax, APPLECOLOR
+	mov al, APPLECOLOR
 	stosw
 
 	;; Move snake in current direction

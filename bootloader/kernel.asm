@@ -226,7 +226,7 @@ data:
 
 %macro snake_limpa_tela 0
     xor ax, ax
-    mov al, COR_TELA
+    mov al, COR_TELA    ; trocar a cor dps
     xor di, di
     mov cx, LARGURA_TELA*ALTURA_TELA    ; Tamanho da tela
     rep stosb
@@ -239,7 +239,45 @@ data:
         cmp [CS:TIMER], ax ; Checo se já se passou um segundo
         jl .wait
 %endmacro
-jogar_snake:                       ; prepara a tela para o jogo
+
+print_main_menu_snake:
+    pusha
+    snake_limpa_tela                          
+
+    print_string 02h, 07h, snake_texto_main_menu
+    print_string 07h, 0Ch, snake_instrucoes1
+    print_string 09h, 05h, snake_instrucoes2
+    print_string 0Bh, 09h, snake_texto_jogar
+    print_string 0Fh, 05h, snake_texto_sair_jogo            
+    print_string 11h, 05h, snake_texto_controle          
+    print_string 13h, 05h, snake_texto_reset
+
+    .espera_tecla:
+        mov ah, 00h
+        int 16h         
+        cmp al, 't'
+        je .snake_jogar
+        cmp al, 'T'
+        je .snake_jogar
+        cmp al, 'n'
+        je .end
+        cmp al, 'N'
+        je .end
+        jmp .espera_tecla
+
+    .snake_jogar:
+        popa
+        snake_limpa_tela
+        print_string 0Ah, 11h, snake_good_luck
+        temporizador_delay_snake 30
+        mov al,0
+        ret
+    .end:
+        popa
+        mov al,1
+        ret
+
+jogar_snake:                        ; prepara a tela para o jogo
 
     xor ax, ax                      ; Limpar os registradores
     xor bx, bx
@@ -248,27 +286,15 @@ jogar_snake:                       ; prepara a tela para o jogo
     mov ax, 0013h                   ; Modo de video
 
     int 10h
-    push 0A000h
-    pop es                          ; Movendo o ponteiro es para o primeiro pixel da tela
 
-    pop ax
-    push ax
 
-    cmp ax, 1
-    jle print_inicio
-
-    cmp ax, 2
-    je snake_ganhou
-
-    print_inicio:
-        call print_main_menu_snake
-        cmp al, 1
-        je start
-        jmp continua_inic_snake
+    call print_main_menu_snake
+    cmp al, 1
+    je start
+    jmp continua_inic_snake
 
     continua_inic_snake:
-
-    ; Mover os sprite iniciais para a memoria (densenhar snake ?)
+    ; Mover os sprite iniciais para a memoria (desenhar snake ?)
 
     ; FAZER ESSA PARTE
     ; Desenhar a cobra
@@ -456,7 +482,12 @@ snake_ganhou:
     push 1
     jmp jogar_snake
         
-    posicao_aleatoria:
+        volta_fases:
+    push ax
+
+jmp snake_loop:
+snake_limpa_tela
+posicao_aleatoria:
         xor ah, ah
         int 1Ah
         mov ax, dx
@@ -496,10 +527,7 @@ snake_ganhou:
         .delay:
             cmp [TIMER], bx
             jl .delay
-    volta_fases:
-    push ax
 
-jmp snake_loop
 
 jogar_pong:
     mov al, 1
@@ -534,9 +562,9 @@ menu_console:
         cmp al, 'S'
         je prep_jogar_space
         cmp al, 't'
-        je prep_jogar_snake
+        je jogar_snake
         cmp al, 'T'
-        je prep_jogar_snake
+        je jogar_snake
 
         jmp .espera_tecla
 
@@ -1161,8 +1189,7 @@ mover_barras:               ; move as barras verticalmente
     exit_mov_barra:
         ret
 
-snake_loop:                     ; Loop principal do jogo
-    snake_limpa_tela
+
 
 pong_loop:                      ; gera a sensação de movimento
     xor al , al
@@ -1233,46 +1260,6 @@ pong_loop:                      ; gera a sensação de movimento
 prep_jogar_space:
     push 1
 jmp jogar_space
-
-print_main_menu_snake:
-    pusha
-    snake_limpa_tela                          
-
-    print_string 02h, 07h, snake_texto_main_menu
-    print_string 07h, 0Ch, snake_instrucoes1
-    print_string 09h, 05h, snake_instrucoes2
-    print_string 0Bh, 09h, snake_texto_jogar
-    print_string 0Fh, 05h, snake_texto_sair_jogo            
-    print_string 11h, 05h, snake_texto_controle          
-    print_string 13h, 05h, snake_texto_reset
-
-    .espera_tecla:
-        mov ah, 00h
-        int 16h         
-        cmp al, 't'
-        je .jogar
-        cmp al, 'T'
-        je .jogar
-        cmp al, 'n'
-        je .end
-        cmp al, 'N'
-        je .end
-        jmp .espera_tecla
-
-    .jogar:
-        popa
-        snake_limpa_tela
-        print_string 0Ah, 11h, snake_good_luck
-        temporizador_delay_space 30
-        mov al,0
-        ret
-    .end:
-        popa
-        mov al,1
-        ret
-prep_jogar_snake:
-    push 1
-jmp jogar_snake
 
 jogar_space: ; Prepara a tela para o jogo ---------------------------
     xor ax, ax

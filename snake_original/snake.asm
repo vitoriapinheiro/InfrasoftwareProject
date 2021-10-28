@@ -1,4 +1,4 @@
-; SETUP ---------------
+;; SETUP ---------------
 ;org 07C00h		; Set bootsector to be at memory location hex 7C00h (UNCOMMENT IF USING AS BOOTSECTOR)
 org 8000h		; Set memory offsets to start here
 
@@ -31,7 +31,7 @@ snakeLength: dw 1
 ;; LOGIC --------------------
 setup_game:
 	;; Set video mode - VGA mode 03h (80x25 text mode, 16 colors)
-	mov ax, 1112h
+	mov ax, 0003h
 	int 10h
 
 	;; Set up video memory
