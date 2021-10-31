@@ -10,17 +10,42 @@ data:
 
     ; dados do Snake
 
+        ; Constantes
+
+        ; tela_largura dw 140h                                  ; janela feita com al = 13h (320x200)
+        ; tela_altura dw 0c8h  
+        ; condicao_tela equ 100
+        cor_de_fundo db 0
+        cor_do_objeto db 4
+        cor_da_cobra db 2
+        ; TIMER            equ 046Ch      ; Nº de ticks desde a meia-noite
+        ; 18.2 ticks equivalem a 1 segundo
+        array_cobra_x equ 1000h
+        array_cobra_y equ 2000h
+
+        ; Variáveis
+        cobra_x: dw 160
+        cobra_y: dw 100
+        tamanho_da_cobra: dw 1
+
+        objeto_x: dw 30
+        objeto_y: dw 20
+
+        direcao: db 4
+
+        ;Mensagens
+
     ; dados do Space Invaders =======================================================
         ; Variáveis de Vídeo -------- 320 * 200 = 64000 = 0FA00h
 
         space_sprites    equ 0FA00h
         alien1           equ 0FA00h
-        alien2           equ 0FA04h  ; 4 bytes
-        jogador          equ 0FA08h  ; 4 bytes
-        barreiras_array  equ 0FA0Ch  ; 5 * 4 = 20 bytes
-        aliens_array     equ 0FA20h  ; 4 bytes
+        alien2           equ 0FA04h     ; 4 bytes
+        jogador          equ 0FA08h     ; 4 bytes
+        barreiras_array  equ 0FA0Ch     ; 5 * 4 = 20 bytes
+        aliens_array     equ 0FA20h     ; 4 bytes
         jogador_x        equ 0FA24h
-        tiros_array      equ 0FA25h  ; 4 * 2(coordenadas) = 8 bytes. 2 Primeiros Byte = Tiro do jogador
+        tiros_array      equ 0FA25h     ; 4 * 2(coordenadas) = 8 bytes. 2 Primeiros Byte = Tiro do jogador
         alien_y          equ 0FA2Dh+32
         alien_x          equ 0FA2Eh+32
         aliens_num       equ 0FA2Fh+32  ; Aliens vivos
@@ -34,15 +59,15 @@ data:
         cur_moves        equ 0FA36h+32
         jogador_pt_tiro  equ 0FA37h+32
         ; Constantes ----------------
-        TIMER            equ 046Ch ; Nº de ticks desde a meia-noite
+        TIMER            equ 046Ch      ; Nº de ticks desde a meia-noite
         BARREIRA_X       equ 25
         BARREIRA_Y       equ 80
         JOGADOR_Y        equ 93
         LARGURA_TELA     equ 320
         ALTURA_TELA      equ 200
         ALTURA_SPRITE    equ 4
-        LARGURA_SPRITE   equ 8       ; Largura em Bits
-        LARGURA_SPRITE_P equ 16      ; Largura em Pixels
+        LARGURA_SPRITE   equ 8          ; Largura em Bits
+        LARGURA_SPRITE_P equ 16         ; Largura em Pixels
         DIST_BARREIRAS   equ 25
         
         ; Cores ---------------------
@@ -203,6 +228,10 @@ menu_console:
         je prep_jogar_space
         cmp al, 'S'
         je prep_jogar_space
+        cmp al, 't'
+        je setup_snake
+        cmp al, 'T'
+        je setup_snake
 
         jmp .espera_tecla
 
@@ -500,7 +529,7 @@ reset_bola:
         xor ax, ax 
         cmp [bola_vel_Y], ax
         jl inv_vel_Y_gol 
-          
+
         jmp pass
 
 ; se V_X > 0 && V_Y > 0, inverte 
@@ -1416,38 +1445,45 @@ space_posicao_na_tela:
 
 
 space_sprites_bitmaps:
-    db 10011001b    ; Alien 1 bitmap
+    db 10011001b                    ; Alien 1 bitmap
     db 01011010b
     db 00111100b
     db 01000010b
 
-    db 00011000b    ; Alien 2 bitmap
+    db 00011000b                    ; Alien 2 bitmap
     db 01011010b
     db 10111101b
     db 00100100b
 
-    db 00011000b    ; Jogador bitmap
+    db 00011000b                    ; Jogador bitmap
     db 00111100b
     db 00100100b
     db 01100110b
 
-    db 00111100b    ; Barreira bitmap
+    db 00111100b                    ; Barreira bitmap
     db 01111110b
     db 11100111b
     db 11100111b
 
-    dw 0FFFFh       ; Alien array
+    dw 0FFFFh                       ; Alien array
     dw 0FFFFh
-    db 75           ; player_x
-    dw 230Ah        ; alien_y e alien x | 10 = Y, 35 = X
-    db 20h          ; num de aliens = 32 
-    db 0FBh         ; Direção =  -5
-    dw 18           ; 18 Ticks para mover os aliens
-    db 1            ; Muda o alien - entre 1 e -1
-    db 25           ; Distancia barreiars
-    db 5            ; Num Barreiras
+    db 75                           ; player_x
+    dw 230Ah                        ; alien_y e alien x | 10 = Y, 35 = X
+    db 20h                          ; num de aliens = 32 
+    db 0FBh                         ; Direção =  -5
+    dw 18                           ; 18 Ticks para mover os aliens
+    db 1                            ; Muda o alien - entre 1 e -1
+    db 25                           ; Distancia barreiars
+    db 5                            ; Num Barreiras
     db 0
     db 0
+
+;Snake ----------------------------------------------------------------
+
+setup_snake:
+    call limpar_tela
+
+jmp setup_snake
 
 start:
     xor ax, ax
@@ -1457,8 +1493,6 @@ start:
     call limpar_tela                ; executa a configuração de video inicial
 
     jmp menu_console
-
-
 
 
 times 63*512-($-$$) db 0
