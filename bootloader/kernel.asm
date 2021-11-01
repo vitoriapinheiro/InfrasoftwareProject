@@ -29,8 +29,8 @@ data:
         cobra_x: dw 0A0h
         cobra_y: dw 064h
         comprimento_da_cobra: dw 5
-        largura_da_cobra: dw 5
-        win_points: dw 1
+        largura_da_cobra: dw 2
+        win_points: dw 30
 
         points dw 0
 
@@ -90,7 +90,7 @@ data:
         ; Cores ---------------------
         COR_ALIEN       equ 02h
         COR_JOGADOR     equ 0Fh
-        COR_TELA        equ 13h
+        COR_TELA        equ 00h         ; cor preta
         COR_BARREIRA    equ 06h
         COR_TIRO_ALIEN  equ 21h
         COR_TIRO_PLAYER equ 35h
@@ -138,11 +138,11 @@ data:
         
         texto_main_menu db 'MENU PRINCIPAL', 0                  ; texto main menu
         texto_jogar db 'JOGAR - pressione P', 0                 ; texto jogar
-        texto_sair_jogo db 'Pressione E para sair de jogo', 0   ; texto sair do jogo
+        texto_sair_jogo db 'Pressione N para sair de jogo', 0   ; texto sair do jogo
         texto_jogador_1 db 'JOGADOR 1', 0                       ; texto jogador 1
-        texto_inst_jogador_1 db 'O/L move cima/baixo', 0        ; texto inst jogador 1
+        texto_inst_jogador_1 db 'W/S move cima/baixo', 0        ; texto inst jogador 1
         texto_jogador_2 db 'JOGADOR 2', 0                       ; texto jogador 2
-        texto_inst_jogador_2 db 'W/S move cima/baixo', 0        ; texto inst jogador 2
+        texto_inst_jogador_2 db 'O/L move cima/baixo', 0        ; texto inst jogador 2
         
         ; dados da bola
         bola_size dw 5                                          ; tamanho da bola
@@ -173,27 +173,7 @@ data:
         barra_vel dw 06h                                        ; velocidade vertical da barra
     
 
-%macro print_snake 5
-    .loop_x:
-        .loop_y:
-            mov ah, 0Ch
-            mov bh, 0
-            mov al, %5
-            int 10h 
 
-            inc cx
-            mov ax, cx 
-            sub ax, %1
-            cpm ax, %3
-            jne .loop_y
-        
-        mov cx, %1
-        inc dx 
-        mov ax, dx 
-        sub ax, %2
-        cpm ax, %4
-        jne .loop_x
-%endmacro
 
 ; printa um objeto passando os parrametros
 ; (coordX, coordY, largura, altura, cor)
@@ -233,6 +213,32 @@ data:
 
     call prints                     ; print o texto
 %endmacro
+
+
+print_bounderies:
+    print_top:
+        mov cx, 0
+        mov dx, 0
+        print_obj 0, 0, [tela_largura], 2, 0Fh
+
+    
+    print_bottom:
+        mov cx, 0
+        mov dx, 0C6h
+        print_obj 0,  0C6h, [tela_largura], 2, 0Fh 
+
+    print_left: 
+        mov cx, 0
+        mov dx, 0
+        print_obj 0, 0, 2, [tela_altura], 0fh
+
+    print_right:
+        mov cx, 13Eh
+        mov dx, 0
+        print_obj 13Eh, 0, 2, [tela_altura], 0fh
+
+
+    ret
 
 jogar_pong:
     mov al, 1
@@ -477,9 +483,9 @@ print_main_menu:
         cmp al, 'P'
         je jogar
 
-        cmp al, 'e'
+        cmp al, 'n'
         je end
-        cmp al, 'E'
+        cmp al, 'N'
         je end
 
         jmp .espera_tecla
@@ -1533,19 +1539,18 @@ pinta_tela_amarelo:
 print_instrucoes_snake:
     call limpar_tela
 
-    print_string 04h, 06h, snake_texto_main_menu            ; print texto main menu
+    print_string 02h, 06h, snake_texto_main_menu            ; print texto main menu
 
-    print_string 06h, 06h, snake_instrucoes1                ; print texto jogar
+    print_string 06h, 06h, snake_instrucoes1                ; print texto inst
 
-    print_string 08h, 06h, snake_instrucoes2                ; print texto sair do jogo
+    print_string 08h, 06h, snake_instrucoes2                ; print texto inst continuação
 
-    print_string 0Eh, 06h, snake_texto_jogar                ; print texto jogador 1
+    print_string 0Eh, 06h, snake_texto_jogar                ; print texto jogar
 
-    print_string 10h, 08h, snake_texto_sair_jogo            ; print texto inst jogador 1
+    print_string 10h, 06h, snake_texto_sair_jogo            ; print texto sair do jogo
 
-    print_string 12h, 06h, snake_texto_controle             ; print texto jogador 2
-
-    print_string 14h, 08h, snake_texto_reset                ; print texto int jogador 2
+    print_string 12h, 08h, snake_texto_controle             ; print texto controles
+   
 
     .espera_tecla:
     ; espera por um caracter
@@ -1553,38 +1558,57 @@ print_instrucoes_snake:
     int 16h          ; salva o caracter em al
 
     cmp al, 't'
-    ret
+    je .end_espera
     cmp al, 'T'
-    ret
+    je .end_espera
 
-    ; cmp al, 'e'
-    ; je end
-    ; cmp al, 'E'
-    ; je end
+    cmp al, 'n'
+    je end
+    cmp al, 'N'
+    je end
 
     jmp .espera_tecla
 
-    ret
+    .end_espera:
+        ret
 
 print_cobra:
     ; Desenhar cobra
     
     mov cx, [cobra_x]
     mov dx, [cobra_y]
-    print_obj [cobra_x], [cobra_y], [comprimento_da_cobra], [largura_da_cobra], 0ah
+    ;print_obj [cobra_x], [cobra_y], [comprimento_da_cobra], [largura_da_cobra], 0ah
 
-    ; xor bx, bx
-    ; mov cx, [comprimento_da_cobra]
-    ; mov ax, 0ah
-    ; .snake_loop:
-    ;     imul di, [array_cobra_y + bx], 280h
-    ;     imul dx, [array_cobra_x + bx], 10
-    ;     add di, dx
-    ;     stosw
-    ;     inc bx
-    ;     inc bx
-    ;     ;int 10h
-    ; loop .snake_loop
+    
+
+    xor si, si
+    .loop:
+        mov cx, [array_cobra_x + si]
+        mov dx, [array_cobra_y + si]
+
+        mov ah, 0Ch
+        mov al, 0Ah
+        mov bh, 00h
+        int 10h
+
+        inc cx
+        int 10h
+
+        inc dx
+        dec cx
+        int 10h
+
+        inc cx
+        int 10h
+
+        inc si
+        inc si
+
+        mov dx, [comprimento_da_cobra]
+        add dx, [comprimento_da_cobra]
+
+        cmp si, dx
+        jne .loop
 
     ret
 
@@ -1624,8 +1648,10 @@ snake_loop:
     ;mov cx, 0FA00h
     ;rep stosw                               ; mov [ES:DI], ax & incrementa di
 
+
     call print_cobra 
     call print_objeto
+    call print_bounderies
 
     mov al, [direcao]
     cmp al, UP
@@ -1669,7 +1695,7 @@ snake_loop:
 
             dec bx
             dec bx
-        jnz .update_loop
+            jnz .update_loop
 
     ; Atualiza os valores da cabeca da cobra no array
     mov ax, [cobra_x]
@@ -1776,7 +1802,7 @@ snake_loop:
 
         ; Se bateu no objeto, incrementa o tamanho da cobra
 
-        add word [comprimento_da_cobra], 4
+        add word [comprimento_da_cobra], 2
         inc word [points]
         mov ax, [points]
         cmp ax, [win_points]
