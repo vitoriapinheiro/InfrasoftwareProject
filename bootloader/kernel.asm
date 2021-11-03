@@ -16,7 +16,6 @@ data:
         ; tela_altura dw 0c8h  
         ; condicao_tela equ 100
         cor_de_fundo db 14
-        cor_do_objeto db 4
         cor_da_cobra db 2
         ; TIMER       equ 046Ch                                 ; Nº de ticks desde a meia-noite, 18.2 ticks equivalem a 1 segundo
         array_cobra_x equ 1000h
@@ -30,19 +29,19 @@ data:
         cobra_y: dw 064h
         comprimento_da_cobra: dw 5
         largura_da_cobra: dw 2
-        win_points: dw 30
+        win_points: dw 15
 
         points dw 0
 
         objeto_x: dw 30
         objeto_y: dw 20
-
+        cor_do_objeto: db 4
         direcao: db 4
 
         ; Mensagens
 
         snake_texto_main_menu        db 'BEM-VINDO AO SNAKE GAME', 0
-        snake_instrucoes1            db 'COMA MACAS PARA', 0
+        snake_instrucoes1            db 'COMA AS FRUTAS PARA', 0
         snake_instrucoes2            db 'CRESCER E ZERAR O JOGO', 0
         snake_texto_jogar            db 'JOGAR - PRESSIONE T', 0
         snake_texto_sair_jogo        db 'SAIR - PRESSIONE N', 0
@@ -51,6 +50,7 @@ data:
         snake_good_luck              db 'BOA SORTE!', 0
         snake_fim                    db 'GAME OVER', 0
         snake_parabens               db 'PARABENS!', 0
+        snake_ganhou                 db 'VOCE GANHOU O JOGO', 0
         snake_return                 db 'APERTE E PARA RETORNAR', 0
     ; dados do Space Invaders =======================================================
         ; Variáveis de Vídeo -------- 320 * 200 = 64000 = 0FA00h
@@ -219,23 +219,23 @@ print_bounderies:
     print_top:
         mov cx, 0
         mov dx, 0
-        print_obj 0, 0, [tela_largura], 2, 0Fh
+        print_obj 0, 0, [tela_largura], 2, [cor_do_objeto]
 
     
     print_bottom:
         mov cx, 0
         mov dx, 0C6h
-        print_obj 0,  0C6h, [tela_largura], 2, 0Fh 
+        print_obj 0,  0C6h, [tela_largura], 2, [cor_do_objeto]
 
     print_left: 
         mov cx, 0
         mov dx, 0
-        print_obj 0, 0, 2, [tela_altura], 0fh
+        print_obj 0, 0, 2, [tela_altura], [cor_do_objeto]
 
     print_right:
         mov cx, 13Eh
         mov dx, 0
-        print_obj 13Eh, 0, 2, [tela_altura], 0fh
+        print_obj 13Eh, 0, 2, [tela_altura], [cor_do_objeto]
 
 
     ret
@@ -344,7 +344,6 @@ atualiza_texto_jogador_dois:
     mov [texto_jogador_dois], al
 
     ret
-
 
 print_barra_direita:
 
@@ -1612,11 +1611,26 @@ print_cobra:
 
     ret
 
+reset_cor_objeto:
+    mov al, 1
+    mov [cor_do_objeto], al
+    ret
+
+mudar_cor_objeto:
+    mov al, [cor_do_objeto]
+    inc al
+    mov [cor_do_objeto], al
+
+    mov ah, 16
+    cmp [cor_do_objeto], ah
+    jge reset_cor
+
+    ret
 print_objeto:
     ; Desenhar objeto
     mov cx, [objeto_x]
     mov dx, [objeto_y]
-    print_obj [objeto_x], [objeto_y], 3, 3, 4h
+    print_obj [objeto_x], [objeto_y], 3, 3, [cor_do_objeto]
 
     ret
 
@@ -1809,6 +1823,7 @@ snake_loop:
         jge game_won_snake
 
     ; Nao ganhou, entao gere outro objeto
+    call mudar_cor_objeto
     proximo_objeto:
         ; Pegar uma posicao aleatoria 
         xor ah, ah
@@ -1856,7 +1871,8 @@ jmp snake_loop
 game_won_snake:
     call limpar_tela
     print_string 06h, 08h, snake_parabens                   ; print texto ganhou
-    print_string 08h, 08h, snake_return
+    print_string 08h, 08h, snake_ganhou
+    print_string 12h, 08h, snake_return
     
     xor ah, ah
     int 16h
