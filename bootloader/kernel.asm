@@ -215,7 +215,7 @@ data:
 %endmacro
 
 
-print_bounderies:
+print_boundaries:
     print_top:
         mov cx, 0
         mov dx, 0
@@ -1562,8 +1562,9 @@ print_cobra:
     mov cx, [cobra_x]
     mov dx, [cobra_y]
 
-    xor si, si
+    xor si, si  ; indice do array
     .loop:
+        ;Interando sobre o array cobra e printando as coordenadas principais
         mov cx, [array_cobra_x + si]
         mov dx, [array_cobra_y + si]
 
@@ -1572,6 +1573,7 @@ print_cobra:
         mov bh, 00h
         int 10h
 
+        ;Preenchendo o corpo da cobra
         inc cx
         int 10h
 
@@ -1644,7 +1646,7 @@ snake_loop:
 
     call print_cobra 
     call print_objeto
-    call print_bounderies
+    call print_boundaries
 
     mov al, [direcao]
     cmp al, UP
@@ -1677,9 +1679,9 @@ snake_loop:
         add word [cobra_x], 2
         jmp update_snake
 
-    update_snake:                                   ; atualizar a posiao da cobra de acordo com o input do usuario
+    update_snake:                                       ; atualizar a posicao da cobra de acordo com o input do usuario
         imul bx, [comprimento_da_cobra], 2              ; cada elemento do array tem 2 bytes
-        .update_loop:
+        .update_loop:                                   ; Gera a sensação de movimento percorrendo o corpo da cobra
             mov ax, [array_cobra_x - 2 + bx]
             mov word [array_cobra_x + bx], ax
 
@@ -1698,7 +1700,7 @@ snake_loop:
     
     ; Condicoes para perder
     ; Bater na borda
-    cmp word [cobra_y], -1                  ; Bora superior
+    cmp word [cobra_y], -1                  ; Borda superior
     jle game_over_snake
     
     mov bx, [tela_altura]
@@ -1712,14 +1714,14 @@ snake_loop:
     cmp word [cobra_x], bx                  ; Direita da tela
     jge game_over_snake
     
-    ; Bater na propria cobra
+                                            ; Bater na propria cobra
     cmp word [comprimento_da_cobra], 5      ; So tem o segmento inicial
     je input_cobra
 
     mov bx, 2                               ; Index do array, comeca no segundo elemento do array
     mov cx, [comprimento_da_cobra]          ; Contador de loop
 
-    check_hit_snake_loop:
+    check_hit_snake_loop:                   ; Checar se a cobra bateu nela mesma
         mov ax, [cobra_x]
         cmp ax, [array_cobra_x + bx]
         jne .increment
@@ -1772,7 +1774,7 @@ snake_loop:
     checar_objeto:
         mov byte [direcao], bl            ; Atualizar posicao
 
-        ; checa se a bola colide com a barra esquerda   
+        ; Checar de existe sobreposicao entre do objeto e da cobra com uma margem de erro
         mov ax, [objeto_x]
         add ax, 3
         cmp ax, [cobra_x]
@@ -1794,7 +1796,7 @@ snake_loop:
         jnl delay_loop        
 
         ; Se bateu no objeto, incrementa o tamanho da cobra
-
+        ; E aumenta a pontuação
         add word [comprimento_da_cobra], 2
         inc word [points]
         mov ax, [points]
@@ -1804,7 +1806,7 @@ snake_loop:
     ; Nao ganhou, entao gere outro objeto
     call mudar_cor_objeto
     proximo_objeto:
-        ; Pegar uma posicao aleatoria 
+        ; Pegar uma posicao pseudoaleatoria para o objeto aparecer a seguir
         xor ah, ah
         int 1ah                         ; Pegar os ticks de relogio desde a meia-noite
         mov ax, dx
@@ -1838,7 +1840,7 @@ snake_loop:
             inc bx
     loop .check_loop
 
-    delay_loop:
+    delay_loop:                     ; Para não ficar piscando freneticamente
         mov bx, [TIMER]
         add bx, 2
         .delay:
