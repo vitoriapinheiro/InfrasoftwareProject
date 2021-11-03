@@ -869,7 +869,7 @@ mover_barras:               ; move as barras verticalmente
         fix_barra_direita_cima:
             mov ax, [margem_erro]
             mov [barra_direita_Y], ax
-             
+
             ret
 
 
@@ -1600,14 +1600,22 @@ reset_cor_objeto:
     mov [cor_do_objeto], al
     ret
 
+jump_grey:
+    mov al, 9
+    mov [cor_do_objeto], al
+    ret
+
 mudar_cor_objeto:
     mov al, [cor_do_objeto]
     inc al
     mov [cor_do_objeto], al
-    ; Selecionar cores de 1-15
+    ; Selecionar cores de 1-15, menos 7 e 8 que são cinza
     mov ah, 16
     cmp [cor_do_objeto], ah
     jge reset_cor_objeto
+    mov ah, 7
+    cmp [cor_do_objeto], ah
+    je jump_grey
 
     ret
 print_objeto:
