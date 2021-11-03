@@ -2,5 +2,5 @@
 
 ## Como rodar?
 Entre na pasta do projeto e siga os comandos abaixo
-cd bootloader/
-make
+`cd bootloader/`
+`make`
