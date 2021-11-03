@@ -966,7 +966,7 @@ pong_loop:                     ; gera a sensação de movimento
 %endmacro
 
 prep_jogar_space:
-    push 1
+    push 1      ; Primeira fase
 jmp jogar_space
 
 jogar_space: ; Prepara a tela para o jogo ---------------------------
@@ -977,6 +977,7 @@ jogar_space: ; Prepara a tela para o jogo ---------------------------
     int 10h
     push 0A000h 
     pop es ; Movendo o ponteiro es para o primeiro pixel da tela
+
 
     pop ax
     push ax
@@ -1127,7 +1128,7 @@ space_loop: ; Loop principal do jogo --------------------------------
     add di, 4                   ; Se sim, use o sprite alternativo
     desenha_linha_aliens:
         pusha                   ; Salvando os registradores
-        mov cl, 8               ; 8 linhas
+        mov cl, 8               ; 8 colunas
 
         .checa_alien:
             pusha
@@ -1150,15 +1151,15 @@ space_loop: ; Loop principal do jogo --------------------------------
                     je .muda_cor
                     cmp bl, COR_JOGADOR
                     je .muda_cor
-                     cmp bl, COR_TIRO_ALIEN
+                    cmp bl, COR_TIRO_ALIEN
                     je .muda_cor
-                     cmp bl, COR_TIRO_PLAYER
+                    cmp bl, COR_TIRO_PLAYER
                     je .muda_cor
                 
         loop .checa_alien                   ; Loop roda "CL" vezes
 
         popa
-        add al, ALTURA_SPRITE + 2
+        add al, ALTURA_SPRITE + 2           ; 2 Pixels de distância, al guarda o y
         inc si
     loop desenha_linha_aliens               ; Loop roda "CL" vezes (por isso o popa)
     
@@ -1181,14 +1182,14 @@ space_loop: ; Loop principal do jogo --------------------------------
         pusha
         call space_desenha_sprite
         popa
-        add ah, [dist_barreiras]
+        add ah, [dist_barreiras] 
         add si, ALTURA_SPRITE
     loop desenha_barreiras
     
     ; Checar se o tiro acertou algo ----------------
 
     mov si, tiros_array
-    mov cl,20
+    mov cl, 20  
     get_prox_tiro:
         push cx
         lodsw       ; Y/X em AL e AH
@@ -1202,7 +1203,7 @@ space_loop: ; Loop principal do jogo --------------------------------
     jmp cria_tiro_aliens
 
     check_tiro:
-        call space_posicao_na_tela
+        call space_posicao_na_tela  
         mov al, [di]
         ; Acertou Jogador
         cmp al, COR_JOGADOR
@@ -1213,23 +1214,23 @@ space_loop: ; Loop principal do jogo --------------------------------
         ; Acertou Barreira 
         cmp al, COR_BARREIRA
         jne .check_acertou_alien
-        mov bx, barreiras_array
+        mov bx, barreiras_array                           
         mov ah, BARREIRA_X + LARGURA_SPRITE
         .check_barreira_loop:
             cmp  dh, ah                     ; DX salva a posição x e y do tiro
             ja .prox_barreira
 
-            sub ah, LARGURA_SPRITE          ; Valor X inicial da barreira 
+            sub ah, LARGURA_SPRITE          ; Valor X inicial da barreira  
             sub dh, ah                      ; Subtract from shot X
 
             pusha
             sub dl, BARREIRA_Y              ; Tira a diferença para o primeiro pixel da barreira
             add bl, dl                      ; BX agora aponta para a linha do pixel atingido
-            mov al, 7
+            mov al, 7                      
             sub al, dh                      ; 
-            cbw                             ; AH = 0
+            cbw                             ; AH = 0 
             btr [bx], ax                    ; BIT TESTE e RESETA o pixel
-            mov byte [si-2], 0              ; Reseta o valor de Y do tiro para 0
+            mov byte [si-2], 0              ; Reseta o valor de Y do tiro para 0 
             popa
             jmp prox_tiro
             .prox_barreira:
@@ -1239,7 +1240,7 @@ space_loop: ; Loop principal do jogo --------------------------------
         jmp .check_barreira_loop
         ; Acertou Alien
         .check_acertou_alien:
-            cmp cl,17                        ; É o tiro do player?
+            cmp cl,17                        ; É o tiro do player? 
             jl desenha_tiro
 
             cmp al, COR_TIRO_ALIEN         
@@ -1271,7 +1272,7 @@ space_loop: ; Loop principal do jogo --------------------------------
                     jmp prox_tiro
 
                     .prox_alien:
-                        add ah, LARGURA_SPRITE+4
+                        add ah, LARGURA_SPRITE + 4
                 jmp .get_alien
                 .prox_linha:
                     add al, ALTURA_SPRITE + 2
@@ -1288,7 +1289,7 @@ space_loop: ; Loop principal do jogo --------------------------------
         jge .desenha             ; Se sim, desenhe
 
         mov bh, COR_TIRO_ALIEN  ; Se não, tiro do alien
-        add ax,2                  ; ax = ax - 1 ali em cima, adiciona 2 pra virar ax + 2 (move pra baixo)
+        add ax,2                  ; ax = ax - 1 ali em cima, adiciona 2 pra virar ax + 2 (move pra baixo)  
         cmp al, ALTURA_TELA/2   ; Escala, comparando se atingiu a tela
         cmovge ax, bx           ; Se sim, zera AX
 
@@ -1336,7 +1337,7 @@ space_loop: ; Loop principal do jogo --------------------------------
     ; Mover Aliens --------------------------------
     move_alien:
         mov di, alien_x
-        inc byte [cur_moves]
+        inc byte [cur_moves] 
         mov al, [cur_moves]
         cmp al, [move_timer]
         jl space_get_input
@@ -1359,12 +1360,12 @@ space_loop: ; Loop principal do jogo --------------------------------
             dec di
 
         .move_baixo:
-            neg byte [aliens_direcao]   ; Move in opposite X direction
+            neg byte [aliens_direcao]   ; Move na direção x oposta
             dec di
-            add byte [di], 5            ; Add to alienY value to move down
-            cmp byte [di], BARREIRA_Y+1     ; Did aliens breach the barriers?
-            jg space_game_over                ; Yes, lost game :'(
-            dec byte [move_timer]       ; Aliens will get slightly faster
+            add byte [di], 4            ; Adiciona no alien_y 5 pixels para baixo
+            cmp byte [di], BARREIRA_Y   ; Eles acertaram a barreira?
+            jg space_game_over          ; Se sim, game_over
+            dec byte [move_timer]       ; Se não, aumenta a velocidade
             cmp byte [move_timer], 2
             jne space_get_input
             add byte [move_timer], 1
@@ -1473,7 +1474,7 @@ space_desenha_sprite:           ; Desenha um bloco de 4 pixels, por pixel
     ret
 
 ; Devolve a posição X/Y em DI
-; Registradores:
+; Registradores:                    
 ;   AL -> Posição Y
 ;   AH -> Posição X
 space_posicao_na_tela:
@@ -1481,7 +1482,7 @@ space_posicao_na_tela:
     cbw  
     imul di, ax, LARGURA_TELA * 2   ; A tela é um vetor que cresce na direção x, então para cada "Y" temos LARGURA TELA_PIXELS
     mov al, dh                      ; AX = Y (Antigo AH que agora é 0)
-    shl ax, 1                       ; AX = AX * 2 (Escala)
+    shl ax, 1                       ; AX = AX * 2 (Escala) 
     add di, ax                      ; DI agora terá exatamente o pixel onde o sprite deve ser desenhado
     ret
 
