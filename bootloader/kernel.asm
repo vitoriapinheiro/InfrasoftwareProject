@@ -30,7 +30,7 @@ data:
         cobra_y: dw 064h
         comprimento_da_cobra: dw 5
         largura_da_cobra: dw 2
-        win_points: dw 30
+        win_points: dw 15
 
         points dw 0
 
@@ -51,6 +51,7 @@ data:
         snake_good_luck              db 'BOA SORTE!', 0
         snake_fim                    db 'GAME OVER', 0
         snake_parabens               db 'PARABENS!', 0
+        snake_ganhou                 db 'VOCE GANHOU O JOGO', 0
         snake_return                 db 'APERTE E PARA RETORNAR', 0
     ; dados do Space Invaders =======================================================
         ; Variáveis de Vídeo -------- 320 * 200 = 64000 = 0FA00h
@@ -344,7 +345,6 @@ atualiza_texto_jogador_dois:
     mov [texto_jogador_dois], al
 
     ret
-
 
 print_barra_direita:
 
@@ -1856,7 +1856,8 @@ jmp snake_loop
 game_won_snake:
     call limpar_tela
     print_string 06h, 08h, snake_parabens                   ; print texto ganhou
-    print_string 08h, 08h, snake_return
+    print_string 08h, 08h, snake_ganhou
+    print_string 12h, 08h, snake_return
     
     xor ah, ah
     int 16h
