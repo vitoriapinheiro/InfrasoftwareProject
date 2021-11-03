@@ -3,7 +3,7 @@ jmp 0x0000:start
 
 data:
     ; dados da interface console
-        texto_menu_console db 'SUPER ATARI', 0                  ; texto console
+        texto_menu_console db 'PLAYSTATION 6', 0                  ; texto console
         texto_menu_pong db 'P - JOGAR PONG', 0                  ; texto jogar Pong console
         texto_menu_space db 'S - JOGAR SPACE INVADERS', 0       ; texto jogar Space Invaders console
         texto_menu_snake db 'T - JOGAR SNAKE', 0                ; texto jogar Snake console
@@ -219,23 +219,23 @@ print_bounderies:
     print_top:
         mov cx, 0
         mov dx, 0
-        print_obj 0, 0, [tela_largura], 2, [cor_do_objeto]
+        print_obj 0, 0, [tela_largura], 1, [cor_do_objeto]
 
     
     print_bottom:
         mov cx, 0
-        mov dx, 0C6h
-        print_obj 0,  0C6h, [tela_largura], 2, [cor_do_objeto]
+        mov dx, 0C7h
+        print_obj 0,  0C7h, [tela_largura], 1, [cor_do_objeto]
 
     print_left: 
         mov cx, 0
         mov dx, 0
-        print_obj 0, 0, 2, [tela_altura], [cor_do_objeto]
+        print_obj 0, 0, 1, [tela_altura], [cor_do_objeto]
 
     print_right:
-        mov cx, 13Eh
+        mov cx, 13Fh
         mov dx, 0
-        print_obj 13Eh, 0, 2, [tela_altura], [cor_do_objeto]
+        print_obj 13Fh, 0, 1, [tela_altura], [cor_do_objeto]
 
 
     ret
@@ -919,7 +919,7 @@ pong_loop:                     ; gera a sensação de movimento
         mov [tempo_aux], dx         ; atualiza o tempo
 
         call limpar_tela            ; da update na tela para nao deixar "rastro"
-         
+
         call mover_bola             ; muda as coordenadas da bola      
 
         call print_bola             ; desenha a bola 
@@ -1521,20 +1521,6 @@ space_sprites_bitmaps:
     db 0
 
 ;Snake ----------------------------------------------------------------
-
-pinta_tela_amarelo:
-    mov ax, 0
-    mov ds, ax
-
-    mov ah, 0
-    mov bh, 13h 
-    int 10h
-
-    mov ah, 0xb
-    mov bh, 0
-    mov bl, 4
-    int 10h
-    ret
 print_instrucoes_snake:
     call limpar_tela
 
@@ -1573,12 +1559,8 @@ print_instrucoes_snake:
 
 print_cobra:
     ; Desenhar cobra
-    
     mov cx, [cobra_x]
     mov dx, [cobra_y]
-    ;print_obj [cobra_x], [cobra_y], [comprimento_da_cobra], [largura_da_cobra], 0ah
-
-    
 
     xor si, si
     .loop:
@@ -1620,10 +1602,10 @@ mudar_cor_objeto:
     mov al, [cor_do_objeto]
     inc al
     mov [cor_do_objeto], al
-
+    ; Selecionar cores de 1-15
     mov ah, 16
     cmp [cor_do_objeto], ah
-    jge reset_cor
+    jge reset_cor_objeto
 
     ret
 print_objeto:
@@ -1648,8 +1630,9 @@ setup_snake:
     call print_instrucoes_snake
     call limpar_tela
     call setar_variaveis_snake
-    ;call pinta_tela_amarelo
 
+    ; Colocar as coordenadas iniciais da cobra no array que
+    ; armazena as coordenadas de todos os segmentos
     mov ax, [cobra_x]
     mov word [array_cobra_x], ax
     mov ax, [cobra_y]
@@ -1658,10 +1641,6 @@ setup_snake:
 snake_loop:
     call limpar_tela
     mov ax, 00h                             ; setar o fundo a cada iteracao
-    xor di, di                              ; zerar di
-    ;mov cx, 0FA00h
-    ;rep stosw                               ; mov [ES:DI], ax & incrementa di
-
 
     call print_cobra 
     call print_objeto
@@ -1800,7 +1779,7 @@ snake_loop:
         jng delay_loop        
         
         mov ax, [cobra_x]
-        add ax, [barra_largura]
+        add ax, [largura_da_cobra]
         cmp [objeto_x], ax
         jnl delay_loop        
 
